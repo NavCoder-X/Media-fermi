@@ -9,15 +9,12 @@ from selenium_stealth import stealth
 import time
 import CSV_Voti
 import getpass
+from sys import stdout
 
 # chek voti
 def chek():
-    scelta=input("vuoi cambiare user? (y/n): ").lower()
-    if scelta=="n":
-        codice="S11277444G"
-    else:
-        codice=input("codice: ")
-
+    codice=input("codice: ")
+    stdout.write("\033[91mATTENZIONE la password che inserirai non verra visualizzata graficamente ma ogni carattere che scrivi verra contato!\033[0m\n")
     password=getpass.getpass("password: ")
     input(f"hai inserito una password lunga {len(password)} caratteri, invia per proseguire: ")
     # usa in background
@@ -74,7 +71,7 @@ def chek():
     if len(righe) >= 5:
         righe[4].click()  # Indici Python partono da 0, quindi la quinta è [4]
     else:
-        print("Meno di 5 righe trovate con classe 'griglia rigtab' oppure hai messo le credenziali sbagliate")
+        stdout.write("\033[91mCredenziali errate!\033[0m\n")
         return
     time.sleep(4)
     # Clicca sul bottone che contiene il testo "Tutto"
@@ -123,8 +120,9 @@ def media():
             elif "+" in voto:
                 voto=voto.replace("+", "")
                 voto=float(voto)+0.25
-            elif "½" in voto:
+            elif "½" in voto or "ï¿" in voto:
                 voto=voto.replace("½", "")
+                voto=voto.replace("ï¿", "")
                 voto=float(voto)+0.5
             else:
                 try:
@@ -141,9 +139,15 @@ def main():
 2) media
 3) csv
           """)
-    
-    scelta=int(input("Scegli un'opzione: "))
-    if scelta==1:
+    while True:
+        try:
+            scelta=int(input("Scegli un'opzione: "))
+            break
+        except ValueError:
+            stdout.write("\033[91minserire un numero!\033[0m\n")
+    if scelta<1 or scelta>3:
+        stdout.write("\033[91mInserisci un numero tra 1 e 3!\033[0m")
+    elif scelta==1:
         chek()
     elif scelta==2:
         media()
@@ -151,4 +155,4 @@ def main():
         CSV_Voti.csv()
 
 while True:
-    main()
+   main()
