@@ -61,7 +61,7 @@ def csv():
                             fieldnames[8]:voti[7],
                             fieldnames[9]:voti[8],
                             fieldnames[10]:voti[9],
-                            fieldnames[11]:m
+                            fieldnames[11]:"{:.2f}".format(m).replace('.', ',')
                             })
 
     csv_path = os.path.abspath('example.csv')
