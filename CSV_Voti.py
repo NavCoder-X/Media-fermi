@@ -41,8 +41,9 @@ def csv():
                 elif "+" in voto:
                     voto=voto.replace("+", "")
                     voto=float(voto)+0.25
-                elif "½" in voto:
+                elif "½" in voto or "ï¿" in voto:
                     voto=voto.replace("½", "")
+                    voto=voto.replace("ï¿", "")
                     voto=float(voto)+0.5
                 else:
                     voto=float(voto)
