@@ -8,15 +8,20 @@ from selenium.webdriver.chrome.options import Options
 from selenium_stealth import stealth
 import time
 import CSV_Voti
-import getpass
 from sys import stdout
 
 # chek voti
 def chek():
-    codice=input("codice: ")
-    stdout.write("\033[91mATTENZIONE la password che inserirai non verra visualizzata graficamente ma ogni carattere che scrivi verra contato!\033[0m\n")
-    password=getpass.getpass("password: ")
-    input(f"hai inserito una password lunga {len(password)} caratteri, invia per proseguire: ")
+    with open("login/password.txt", "r") as file:
+        password = file.read().strip()
+    if password=="":
+        print("nessuna password trovata")
+        return "nessuna password"
+    with open("login/id.txt", "r") as file:
+        codice = file.read().strip()
+    if codice=="":
+        print("nessun codice")
+        return "nessun id"
     # usa in background
     option = Options()
     option.add_argument("--headless")
@@ -72,7 +77,7 @@ def chek():
         righe[4].click()  # Indici Python partono da 0, quindi la quinta è [4]
     else:
         stdout.write("\033[91mCredenziali errate!\033[0m\n")
-        return
+        return "credenziali errate"
     time.sleep(4)
     # Clicca sul bottone che contiene il testo "Tutto"
     tutto_button = driver.find_element(By.XPATH, "//button[contains(., 'Tutto')]")
@@ -106,6 +111,7 @@ def chek():
         file.write("riga adizzionale")
     driver.quit()
     print("dati aggiornati!")
+    return "dati aggiornati"
 
 
 def media():
@@ -131,28 +137,11 @@ def media():
                     continue
             totale+=voto
             m=totale/(len(voti)-12)
-        print("Media dei voti:", m)
-    
-def main():
-    print("""
-1) aggiorna lista voti
-2) media
-3) csv
-          """)
-    while True:
         try:
-            scelta=int(input("Scegli un'opzione: "))
-            break
-        except ValueError:
-            stdout.write("\033[91minserire un numero!\033[0m\n")
-    if scelta<1 or scelta>3:
-        stdout.write("\033[91mInserisci un numero tra 1 e 3!\033[0m")
-    elif scelta==1:
-        chek()
-    elif scelta==2:
-        media()
-    elif scelta==3:
-        CSV_Voti.csv()
+            print("Media dei voti:", m)
+            return m
+        except:
+            print("Nessun voto trovato o errore nel calcolo della media.")
+            return "nessun voto trovato"
+    
 
-while True:
-   main()

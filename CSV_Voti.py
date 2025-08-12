@@ -33,8 +33,8 @@ def csv():
         for i in materie_voto.keys():
             voti=materie_voto[i]
             totale=0
-            for voto in voti:
-                voto = voto.strip()
+            for n in range(len(voti)):
+                voto = voti[n].strip()
                 if "-" in voto:
                     voto=voto.replace("-", "")
                     voto=float(voto)-0.25
@@ -47,10 +47,11 @@ def csv():
                     voto=float(voto)+0.5
                 else:
                     voto=float(voto)
+                voti[n] = voto  # Convert to float for CSV
                 totale+=voto
                 m=totale/(len(voti))
             while len(voti)<10:
-                voti.append(0)
+                voti.append(" ")
             writer.writerow({'materia': i,
                             fieldnames[1]:voti[0],
                             fieldnames[2]:voti[1],
