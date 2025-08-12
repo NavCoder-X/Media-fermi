@@ -5,7 +5,7 @@ from media_voti import chek,media
 from CSV_Voti import csv
 
 OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path(r"C:/Users/hp/Desktop/build/assets/frame0")
+ASSETS_PATH = OUTPUT_PATH / Path(r"C:/Users/hp/Desktop/Portfolio/Begginer Projects/Voti/Media-fermi/assets")
 
 
 def relative_to_assets(path: str) -> Path:
