@@ -5,40 +5,46 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium_stealth import stealth
 import time
-import CSV_Voti
 from sys import stdout
+import sys, os
+
 
 # chek voti
 def chek():
-    with open("login/password.txt", "r") as file:
-        password = file.read().strip()
-    if password=="":
-        print("nessuna password trovata")
-        return "nessuna password"
-    with open("login/id.txt", "r") as file:
+    
+    # path
+    def resource_path(relative_path):
+        if hasattr(sys,"_MEIPASS"):
+            return os.path.join(sys._MEIPASS,relative_path)
+        return os.path.join(os.path.abspath("."),relative_path)
+
+    driver_path = resource_path("chromedriver.exe")
+    user_path = resource_path("login/id.txt")
+    pass_path = resource_path("login/password.txt")
+    voti_path = resource_path("voti.txt")
+
+    with open(user_path, "r") as file:
         codice = file.read().strip()
     if codice=="":
         print("nessun codice")
         return "nessun id"
+    with open(pass_path, "r") as file:
+        password = file.read().strip()
+    if password=="":
+        print("nessuna password trovata")
+        return "nessuna password"
     # usa in background
     option = Options()
-    option.add_argument("--headless")
+    # option.add_argument("--headless")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-gpu")
+    option.add_argument("--disable-dev-shm-usage")
 
     # setup driver
-    service = Service("chromedriver.exe")  
+    service = Service(driver_path)  
     driver = webdriver.Chrome(service=service,options=option)
 
-    # applica stealth
-    stealth(driver,
-        languages=["en-US", "en"],
-        vendor="Google Inc.",
-        platform="Win64",
-        webgl_vendor="Intel Inc.",
-        renderer="Intel Iris OpenGL Engine",
-        fix_hairline=True,
-    )
 
     # open the website
     driver.get("https://web.spaggiari.eu/home/app/default/login.php")
@@ -105,7 +111,7 @@ def chek():
                             voti.append(testo)
     voti=voti[3:]
     print("Voti trovati:", voti)
-    with open("voti.txt", "w") as file:
+    with open(voti_path, "w") as file:
         for voto in voti:
             file.write(voto + "\n")
         file.write("riga adizzionale")
@@ -115,7 +121,16 @@ def chek():
 
 
 def media():
-    with open("voti.txt", "r") as file:
+
+    def resource_path(relative_path):
+        if hasattr(sys,"_MEIPASS"):
+            return os.path.join(sys._MEIPASS,relative_path)
+        return os.path.join(os.path.abspath("."),relative_path)
+    
+    voti_path = resource_path("voti.txt")
+
+
+    with open(voti_path, "r") as file:
         voti = file.readlines()
         totale=0
         for voto in voti:

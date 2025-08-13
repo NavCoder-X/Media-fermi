@@ -2,13 +2,23 @@
 
 def csv():
     import csv
-    import os
+    import os , sys
     import platform
     import subprocess
+
+    # path
+    def resource_path(relative_path):
+        if hasattr(sys,"_MEIPASS"):
+            return os.path.join(sys._MEIPASS,relative_path)
+        return os.path.join(os.path.abspath("."),relative_path)
+
+    csv_path = resource_path("example.csv")
+    voti_path = resource_path("voti.txt")
+
     materie_voto={}
     lista=[]
     iter=0
-    with open("voti.txt","r") as file:
+    with open(voti_path,"r") as file:
         context=file.readlines()
         for i in context:
             i=i.strip()
@@ -25,7 +35,7 @@ def csv():
             else:
                 lista.append(i)
 
-    with open('example.csv', 'w', newline='') as csvfile:
+    with open(csv_path, 'w', newline='') as csvfile:
         fieldnames = ['materia', 'voto_1','voto_2','voto_3','voto_4','voto_5','voto_6','voto_7','voto_8','voto_9','voto_10', 'media']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -66,7 +76,6 @@ def csv():
                             fieldnames[11]:"{:.2f}".format(m).replace('.', ',')
                             })
 
-    csv_path = os.path.abspath('example.csv')
     if platform.system() == 'Windows':
         os.startfile(csv_path)
     elif platform.system() == 'Darwin':

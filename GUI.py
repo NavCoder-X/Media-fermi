@@ -1,15 +1,20 @@
-from pathlib import Path
 import customtkinter as ctk
 from PIL import Image
 from media_voti import chek,media
 from CSV_Voti import csv
+import sys, os
 
-OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path(r"C:/Users/hp/Desktop/Portfolio/Begginer Projects/Voti/Media-fermi/assets")
+# path
+def resource_path(relative_path):
+    if hasattr(sys,"_MEIPASS"):
+        return os.path.join(sys._MEIPASS,relative_path)
+    return os.path.join(os.path.abspath("."),relative_path)
 
-
-def relative_to_assets(path: str) -> Path:
-    return ASSETS_PATH / Path(path)
+immagine_2 = resource_path("assets/image_2.png")
+nome_path = resource_path("login/nome.txt")
+user_path = resource_path("login/id.txt")
+pass_path = resource_path("login/password.txt")
+icona_path = resource_path("icona.ico")
 
 
 # Impostazioni CustomTkinter
@@ -20,7 +25,8 @@ ctk.set_default_color_theme("blue")
 window = ctk.CTk()
 window.geometry("700x450")
 window.configure(fg_color="#343333")
-window.title("CustomTkinter UI")
+window.title("Media-Fermi")
+window.iconbitmap(icona_path)
 
 # short cut
 window.bind("<Return>", lambda event: send_button.invoke())  # Invoca handler quando si preme Invio
@@ -35,7 +41,7 @@ top_bar = ctk.CTkFrame(
 )
 top_bar.place(x=50, y=10) # NON mettere width/height qui
 
-with open("login/nome.txt", "r") as file:
+with open(nome_path, "r") as file:
     nome = file.read()
 
 title_label = ctk.CTkLabel(
@@ -63,7 +69,7 @@ center_frame.place(x=72, y=77)
 
 # Immagine piccola a sinistra (se presente)
 try:
-    img2 = Image.open(relative_to_assets("image_2.png"))
+    img2 = Image.open(immagine_2)
     ctki2 = ctk.CTkImage(light_image=img2, dark_image=img2, size=(50, 50))
     image_label_2 = ctk.CTkLabel(master=window, image=ctki2, text="")
     image_label_2.place(x=16, y=77)
@@ -74,12 +80,14 @@ except Exception as e:
 entry_1 = ctk.CTkEntry(
     master=window,
     placeholder_text="Scrivi qui...",
+    font=("ariel",16),
     width=500,
     fg_color="#636363",
     text_color="white",
+    height=35,
     corner_radius=15
 )
-entry_1.place(x=134, y=388) # nessun width/height qui
+entry_1.place(x=103, y=388) # nessun width/height qui
 
 # funzione help
 def help():
@@ -107,12 +115,12 @@ help_button = ctk.CTkButton(
     corner_radius=10,
     border_width=2,
     border_color="#3AE22E",
-    width=110,
-    font=("Ariel",18),
-    height=41,
+    width=80,
+    font=("impact",14),
+    height=35,
     command=help
 )
-help_button.place(x=11, y=388)
+help_button.place(x=10, y=388)
 
 
 # handler dei comandi
@@ -121,16 +129,20 @@ def handler():
     entry_1.delete(0, 'end')  # Pulisce il campo di testo dopo l'invio
     if "/nome" in testo:
         content = testo[6::]  
-        with open("login/nome.txt", "w") as file:
+        with open(nome_path, "w") as file:
             file.write(content)
+        center_frame.configure(text="Nome aggiornato!.")
+        title_label.configure(text=f"Ciao {content}")
     elif "/id" in testo:
         content = testo[4::]  
-        with open("login/id.txt", "w") as file:
+        with open(user_path, "w") as file:
             file.write(content)
+        center_frame.configure(text="id impostato!.")
     elif "/pass" in testo:
         content = testo[6::]  
-        with open("login/password.txt", "w") as file:
+        with open(pass_path, "w") as file:
             file.write(content)
+        center_frame.configure(text="password impostata!.")
     elif testo=="/upd":
         center_frame.configure(text="Aggiornamento in corso...\nci potrebbero volere alcuni minuti\nassicurati di avere una buona conessione.")
         window.update_idletasks()
@@ -164,11 +176,11 @@ send_button = ctk.CTkButton(
     corner_radius=10,
     border_width=2,
     border_color="#2BCBE8",
-    width=41,
-    height=41,
+    width=35,
+    height=35,
     command=handler
 )
-send_button.place(x=647, y=388)
+send_button.place(x=620, y=388)
 
 window.resizable(False, False)
 window.mainloop()
