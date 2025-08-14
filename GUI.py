@@ -1,8 +1,8 @@
 import customtkinter as ctk
-from PIL import Image
+import tkinter as tk
+import sys,os
 from media_voti import chek,media
 from CSV_Voti import csv
-import sys, os
 
 # path
 def resource_path(relative_path):
@@ -10,178 +10,239 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS,relative_path)
     return os.path.join(os.path.abspath("."),relative_path)
 
-immagine_2 = resource_path("assets/image_2.png")
-nome_path = resource_path("login/nome.txt")
-user_path = resource_path("login/id.txt")
-pass_path = resource_path("login/password.txt")
+nome_path = "login/nome.txt"
+user_path = "login/id.txt"
+pass_path = "login/password.txt"
 icona_path = resource_path("icona.ico")
+browser_mode = resource_path("Browser_mode.txt")
 
 
-# Impostazioni CustomTkinter
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
-
-# Finestra principale
-window = ctk.CTk()
-window.geometry("700x450")
-window.configure(fg_color="#343333")
-window.title("Media-Fermi")
-window.iconbitmap(icona_path)
-
-# short cut
-window.bind("<Return>", lambda event: send_button.invoke())  # Invoca handler quando si preme Invio
-
-# Barra superiore: width/height nel costruttore (errore risolto)
-top_bar = ctk.CTkFrame(
-    master=window,
-    fg_color="#6F5E6F",
-    corner_radius=20,
-    width=600,
-    height=35
-)
-top_bar.place(x=50, y=10) # NON mettere width/height qui
-
-with open(nome_path, "r") as file:
-    nome = file.read()
-
-title_label = ctk.CTkLabel(
-    master=top_bar,
-    text=f"Ciao {nome}",
-    font=("KumarOne Regular", 18),
-    text_color="white"
-)
-# uso place interno o pack; ho usato place per posizionare il testo vicino al bordo
-title_label.place(x=10, y=3)
-
-# Area grigia centrale (width/height nel costruttore)
-center_frame = ctk.CTkLabel(
-    master=window,
-    fg_color="#636363",
-    corner_radius=25,
-    width=562,
-    height=286,
-    text=" ",
-    font=("Courier",14),
-    
-)
-center_frame.place(x=72, y=77)
-
-
-# Immagine piccola a sinistra (se presente)
-try:
-    img2 = Image.open(immagine_2)
-    ctki2 = ctk.CTkImage(light_image=img2, dark_image=img2, size=(50, 50))
-    image_label_2 = ctk.CTkLabel(master=window, image=ctki2, text="")
-    image_label_2.place(x=16, y=77)
-except Exception as e:
-    print("Immagine image_2.png non trovata o errore:", e)
-
-# Campo di testo: width nel costruttore (CTkEntry non sempre accetta height)
-entry_1 = ctk.CTkEntry(
-    master=window,
-    placeholder_text="Scrivi qui...",
-    font=("ariel",16),
-    width=500,
-    fg_color="#636363",
-    text_color="white",
-    height=35,
-    corner_radius=15
-)
-entry_1.place(x=103, y=388) # nessun width/height qui
-
-# funzione help
-def help():
-    center_frame.configure(text="""
-Comandi:                                             
-'/nome' <-- per mettere il tuo nome                  
-'/id'   <-- per mettere il tuo id di classeviva      
-'/pass' <-- per mettere la tua password di classeviva
-'/upd'  <-- per aggiornare i dati sui tuoi voti      
-'/m'    <-- per visualizzare la tua media generale   
-'/csv'  <-- per aprire un file excel con i tuoi voti 
-"""
-)
-
-
-
-
-# Bottone Help (width/height nel costruttore)
-help_button = ctk.CTkButton(
-    master=window,
-    text="/Help",
-    fg_color="#636363",
-    hover_color="#000000",
-    text_color="white",
-    corner_radius=10,
-    border_width=2,
-    border_color="#3AE22E",
-    width=80,
-    font=("impact",14),
-    height=35,
-    command=help
-)
-help_button.place(x=10, y=388)
-
-
-# handler dei comandi
-def handler():
-    testo = entry_1.get()
-    entry_1.delete(0, 'end')  # Pulisce il campo di testo dopo l'invio
-    if "/nome" in testo:
-        content = testo[6::]  
-        with open(nome_path, "w") as file:
-            file.write(content)
-        center_frame.configure(text="Nome aggiornato!.")
-        title_label.configure(text=f"Ciao {content}")
-    elif "/id" in testo:
-        content = testo[4::]  
-        with open(user_path, "w") as file:
-            file.write(content)
-        center_frame.configure(text="id impostato!.")
-    elif "/pass" in testo:
-        content = testo[6::]  
-        with open(pass_path, "w") as file:
-            file.write(content)
-        center_frame.configure(text="password impostata!.")
-    elif testo=="/upd":
-        center_frame.configure(text="Aggiornamento in corso...\nci potrebbero volere alcuni minuti\nassicurati di avere una buona conessione.")
-        window.update_idletasks()
-        esito = chek()
-        if esito=="nessuna password":
-            center_frame.configure(text="Nessuna password trovata! Inserisci '/pass' per aggiungerla.")
-        elif esito=="nessun id":
-            center_frame.configure(text="Nessun id trovato! Inserisci '/id' per aggiungerlo.")
-        elif esito=="credenziali errate":
-            center_frame.configure(text="Credenziali errate, perfavore metti quelle giuste")
-        elif esito=="dati aggiornati":
-            center_frame.configure(text="Dati aggiornati!")
-    elif testo=="/m":
-        esito = media()
-        if esito=="nessun voto trovato":
-            center_frame.configure(text="Nessun voto trovato!")
+class ModernGUI:
+    def __init__(self):
+        # Configura il tema e la modalità di colore
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+        
+        # Crea la finestra principale
+        self.root = ctk.CTk()
+        self.root.title("Medie-Fermi")
+        self.root.geometry("600x500")
+        self.root.resizable(True, True)
+        
+        # Imposta l'icona 
+        try:
+            self.root.iconbitmap(icona_path)  
+        except:
+            pass  
+        
+        # Configura il grid layout
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_columnconfigure(2, weight=1)
+        self.root.grid_rowconfigure(0, weight=0)  # Label saluto
+        self.root.grid_rowconfigure(1, weight=1)  # Output area
+        self.root.grid_rowconfigure(2, weight=0)  # Checkbox
+        self.root.grid_rowconfigure(3, weight=0)  # Entry e bottoni
+        
+        # Variabili per le animazioni
+        self.animation_running = False
+        
+        self.setup_gui()
+        
+    def setup_gui(self):
+        # Label di saluto in alto
+        with open(nome_path, "r") as file:
+            nome = file.read()
+        self.saluto_label = ctk.CTkLabel(
+            self.root,
+            text=f"💻 Ciao {nome} 💻",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color="#00D4FF"
+        )
+        self.saluto_label.grid(row=0, column=0, columnspan=3, pady=(20, 30), padx=20, sticky="ew")
+        
+        # Label centrale per l'output
+        self.output_frame = ctk.CTkFrame(self.root)
+        self.output_frame.grid(row=1, column=0, columnspan=3, pady=(0, 20), padx=20, sticky="nsew")
+        self.output_frame.grid_columnconfigure(0, weight=1)
+        self.output_frame.grid_rowconfigure(0, weight=1)
+        
+        self.output_label = ctk.CTkLabel(
+            self.output_frame,
+            text="L'output del programma apparirà qui...",
+            font=ctk.CTkFont(size=12,family="Rubik",weight="bold"),
+            wraplength=500,
+            justify="left",
+            anchor="nw"
+        )
+        self.output_label.grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+        
+        # Checkbox
+        self.checkbox_var = ctk.BooleanVar()
+        self.checkbox = ctk.CTkCheckBox(
+            self.root,
+            text="Browser visibile",
+            variable=self.checkbox_var,
+            font=ctk.CTkFont(size=12),
+            command=self.on_checkbox_change
+        )
+        self.checkbox.grid(row=2, column=0, columnspan=3, pady=(0, 20), padx=20)
+        
+        # Frame per i controlli in basso
+        self.bottom_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.bottom_frame.grid(row=3, column=0, columnspan=3, pady=(0, 20), padx=20, sticky="ew")
+        self.bottom_frame.grid_columnconfigure(1, weight=1)
+        
+        # Bottone di aiuto
+        self.help_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="❓ Aiuto",
+            width=100,
+            height=35,
+            command=self.show_help,
+            fg_color="#2B2B2B",
+            hover_color="#404040",
+            border_width=2,
+            border_color="#27F602"
+        )
+        self.help_button.grid(row=0, column=0, padx=(0, 10), pady=5)
+        
+        # Entry centrale
+        self.entry = ctk.CTkEntry(
+            self.bottom_frame,
+            placeholder_text="Inserisci il tuo comando qui...",
+            height=35,
+            font=ctk.CTkFont(size=12),
+            border_width=2,
+            border_color="#00D4FF",
+            fg_color=("#F0F0F0", "#2B2B2B"),
+            text_color=("#000000", "#FFFFFF")
+        )
+        self.entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.entry.bind("<Return>", lambda event: self.process_input())
+        self.entry.bind("<FocusIn>", self.on_entry_focus_in)
+        self.entry.bind("<FocusOut>", self.on_entry_focus_out)
+        
+        # Bottone di invio
+        self.submit_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="🚀 Invia",
+            width=100,
+            height=35,
+            command=self.process_input,
+            fg_color="#1F1F1F",
+            hover_color="#333333",
+            border_width=2,
+            border_color="#3C06DD"
+        )
+        self.submit_button.grid(row=0, column=2, padx=(10, 0), pady=5)
+        
+        # Focus sull'entry
+        self.entry.focus()
+        
+    def on_entry_focus_in(self, event):
+        """Effetto glow quando l'entry riceve il focus"""
+        self.entry.configure(border_color="#FF0000", border_width=2)
+        
+    def on_entry_focus_out(self, event):
+        """Rimuove l'effetto glow quando l'entry perde il focus"""
+        self.entry.configure(border_color="#00D4FF", border_width=2)
+        
+    def process_input(self):
+        """Processa l'input dall'utente"""
+        user_input = self.entry.get()
+        
+        if not user_input.strip():
+            self.update_output("⚠️ Inserisci un comando prima di inviare!")
+            return
+        elif "/nome" in user_input:
+            content = user_input[6::]
+            with open(nome_path, "w") as file:
+                file.write(content)
+            output_text = "nome aggiornato!"
+            self.saluto_label.configure(text=f"💻 Ciao {content} 💻")
+        elif "/id" in user_input:
+            content = user_input[4::]
+            with open(user_path, "w") as file:
+                file.write(content)
+            output_text = "id aggiornato!"
+        elif "/pass" in user_input:
+            content = user_input[6::]
+            with open(pass_path, "w") as file:
+                file.write(content)
+            output_text = "password aggiornata!"
+        elif user_input=="/upd":
+            self.update_output("📡Aggiornamento in corso...\n🕓ci potrebbero volere alcuni minuti\n🛜assicurati di avere una buona conessione.")
+            self.root.update_idletasks()
+            esito = chek()
+            if esito=="nessuna password":
+                output_text="⚠️Nessuna password trovata! Inserisci '/pass' per aggiungerla."
+            elif esito=="nessun id":
+                output_text="⚠️Nessun id trovato! Inserisci '/id' per aggiungerlo."
+            elif esito=="credenziali errate":
+                output_text="⚠️Credenziali errate, perfavore metti quelle giuste"
+            elif esito=="dati aggiornati":
+                output_text="Dati aggiornati!🙆‍♂️"
+        elif user_input=="/m":
+            esito = media()
+            if esito=="nessun voto trovato":
+                output_text="⚠️Nessun voto trovato!"
+            else:
+                output_text=f"📊Media Generale: {esito:.2f}"
+        elif user_input=="/csv":
+            self.update_output("📂 Il file si sta aprendo...")
+            self.root.update_idletasks()
+            csv()
+            output_text = "File CSV aperto con successo!👌"   
+        elif user_input=="/r":
+            output_text="L'output del programma apparirà qui..."
         else:
-            center_frame.configure(text=f"Media dei voti: {esito:.2f}")
-    elif testo=="/csv":
-        center_frame.configure(text=f"il file si sta aprendo...")
-        csv()
+            output_text="non so cosa hai scritto...😵‍💫"
 
+        # Simula l'elaborazione del comando
+        self.update_output(output_text)
+        self.entry.delete(0, tk.END)  # Pulisce l'entry
+        
+    def update_output(self, text):
+        """Aggiorna il testo nell'area di output"""
+        self.output_label.configure(text=text)
+        
+    def on_checkbox_change(self):
+        """Gestisce il cambiamento della checkbox"""
+        status = "attivato" if self.checkbox_var.get() else "disattivato"
+        with open(browser_mode, "w") as file:
+            file.write("1" if self.checkbox_var.get() else "0")
+        self.update_output(f"🔄 Browser visibile {status}")
+        
+    def show_help(self):
+        """Mostra la finestra di aiuto"""
+        help_text = """
+🔷 GUIDA ALL'UTILIZZO:
 
-# Bottone invio
-send_button = ctk.CTkButton(
-    master=window,
-    text="→",
-    fg_color="#636363",
-    text_color="white",
-    hover_color="#000000",
-    corner_radius=10,
-    border_width=2,
-    border_color="#2BCBE8",
-    width=35,
-    height=35,
-    command=handler
-)
-send_button.place(x=620, y=388)
+• Inserisci un comando nell'area di testo in basso
+• Premi INVIO o clicca 'Invia' per processare
+• Usa la checkbox per vedere l attivita su chrome quando usi /upd
 
-window.resizable(False, False)
-window.mainloop()
+🔷 Comandi:
 
+• '/nome' <-- per mettere il tuo nome                  
+• '/id'   <-- per mettere il tuo id di classeviva      
+• '/pass' <-- per mettere la tua password di classeviva
+• '/upd'  <-- per aggiornare i dati sui tuoi voti      
+• '/m'    <-- per visualizzare la tua media generale   
+• '/csv'  <-- per aprire un file excel con i tuoi voti 
+• '/r'    <-- per ripulire il output box                
+
+"""
+        
+        # Mostra l'aiuto nel label centrale
+        self.update_output(help_text)
+        
+    def run(self):
+        """Avvia l'applicazione"""
+        self.root.mainloop()
+
+# Crea e avvia l'applicazione
+if __name__ == "__main__":
+    app = ModernGUI()
+    app.run()

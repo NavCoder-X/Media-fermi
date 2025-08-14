@@ -20,9 +20,10 @@ def chek():
         return os.path.join(os.path.abspath("."),relative_path)
 
     driver_path = resource_path("chromedriver.exe")
-    user_path = resource_path("login/id.txt")
-    pass_path = resource_path("login/password.txt")
-    voti_path = resource_path("voti.txt")
+    user_path = "login/id.txt"
+    pass_path = "login/password.txt"
+    voti_path = "voti.txt"
+    browser_mode = resource_path("Browser_mode.txt")
 
     with open(user_path, "r") as file:
         codice = file.read().strip()
@@ -36,7 +37,10 @@ def chek():
         return "nessuna password"
     # usa in background
     option = Options()
-    # option.add_argument("--headless")
+    with open(browser_mode,"r") as f:
+        status = f.read()
+    if status=="0":
+        option.add_argument("--headless")
     option.add_argument("--no-sandbox")
     option.add_argument("--disable-gpu")
     option.add_argument("--disable-dev-shm-usage")
@@ -74,7 +78,9 @@ def chek():
         windows = driver.window_handles
         driver.switch_to.window(windows[-1])
     except:
-        print("password errata")
+        driver.quit()
+        return "credenziali errate"
+        
 
     time.sleep(10)
     # Trova tutte le righe della tabella con classe 'griglia rigtab'
@@ -83,11 +89,16 @@ def chek():
         righe[4].click()  # Indici Python partono da 0, quindi la quinta è [4]
     else:
         stdout.write("\033[91mCredenziali errate!\033[0m\n")
+        driver.quit()
         return "credenziali errate"
     time.sleep(4)
+    try:
     # Clicca sul bottone che contiene il testo "Tutto"
-    tutto_button = driver.find_element(By.XPATH, "//button[contains(., 'Tutto')]")
-    tutto_button.click()
+        tutto_button = driver.find_element(By.XPATH, "//button[contains(., 'Tutto')]")
+        tutto_button.click()
+    except:
+        driver.quit()
+        return "credenziali errate"
 
     time.sleep(8)
 
@@ -127,7 +138,7 @@ def media():
             return os.path.join(sys._MEIPASS,relative_path)
         return os.path.join(os.path.abspath("."),relative_path)
     
-    voti_path = resource_path("voti.txt")
+    voti_path = "voti.txt"
 
 
     with open(voti_path, "r") as file:

@@ -2,18 +2,12 @@
 
 def csv():
     import csv
-    import os , sys
     import platform
     import subprocess
-
+    import os
     # path
-    def resource_path(relative_path):
-        if hasattr(sys,"_MEIPASS"):
-            return os.path.join(sys._MEIPASS,relative_path)
-        return os.path.join(os.path.abspath("."),relative_path)
-
-    csv_path = resource_path("example.csv")
-    voti_path = resource_path("voti.txt")
+    csv_path = "example.csv"
+    voti_path = "voti.txt"
 
     materie_voto={}
     lista=[]
