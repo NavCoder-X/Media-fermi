@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 import sys,os
 from media_voti import chek,media
-from CSV_Voti import csv
+from CSV_Voti import csv, quanto_posso_prendere
 
 # path
 def resource_path(relative_path):
@@ -196,6 +196,9 @@ class ModernGUI:
             output_text = "File CSV aperto con successo!👌"   
         elif user_input=="/r":
             output_text="L'output del programma apparirà qui..."
+        elif user_input=="/q":
+            l = quanto_posso_prendere()
+            output_text = "\n".join(l) if l else "⚠️ Nessun risultato trovato."
         else:
             output_text="non so cosa hai scritto...😵‍💫"
 
@@ -225,13 +228,14 @@ class ModernGUI:
 
 🔷 Comandi:
 
-• '/nome' <-- per mettere il tuo nome                  
-• '/id'   <-- per mettere il tuo id di classeviva      
-• '/pass' <-- per mettere la tua password di classeviva
-• '/upd'  <-- per aggiornare i dati sui tuoi voti      
-• '/m'    <-- per visualizzare la tua media generale   
-• '/csv'  <-- per aprire un file excel con i tuoi voti 
-• '/r'    <-- per ripulire il output box                
+• '/nome' <-- per mettere il tuo nome                        
+• '/id'   <-- per mettere il tuo id di classeviva            
+• '/pass' <-- per mettere la tua password di classeviva      
+• '/upd'  <-- per aggiornare i dati sui tuoi voti            
+• '/m'    <-- per visualizzare la tua media generale         
+• '/csv'  <-- per aprire un file excel con i tuoi voti       
+• '/q'    <-- per sapere quanto puoi prendere in ogni materia
+• '/r'    <-- per ripulire il output box                     
 
 """
         

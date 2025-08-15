@@ -141,28 +141,34 @@ def media():
     voti_path = "voti.txt"
 
 
-    with open(voti_path, "r") as file:
+    with open(voti_path, "r",encoding="utf-8") as file:
+        n = 0
         voti = file.readlines()
         totale=0
         for voto in voti:
             voto = voto.strip()
+            if "EDUCAZIONE CIVICA" in voto:
+                break
             if "-" in voto:
                 voto=voto.replace("-", "")
                 voto=float(voto)-0.25
+                n+=1
             elif "+" in voto:
                 voto=voto.replace("+", "")
                 voto=float(voto)+0.25
-            elif "½" in voto or "ï¿" in voto:
+                n+=1
+            elif "½" in voto:
                 voto=voto.replace("½", "")
-                voto=voto.replace("ï¿", "")
                 voto=float(voto)+0.5
+                n+=1
             else:
                 try:
                     voto=float(voto)
+                    n+=1
                 except:
                     continue
             totale+=voto
-            m=totale/(len(voti)-12)
+            m=totale/n
         try:
             print("Media dei voti:", m)
             return m
