@@ -1,8 +1,11 @@
 import customtkinter as ctk
 import tkinter as tk
 import sys,os
-from media_voti import chek,media
+from media_voti import chek,media,grafico_generale,graficoXmateria,materie
 from CSV_Voti import csv, quanto_posso_prendere
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # path
 def resource_path(relative_path):
@@ -60,6 +63,7 @@ class ModernGUI:
             text_color="#00D4FF"
         )
         self.saluto_label.grid(row=0, column=0, columnspan=3, pady=(20, 30), padx=20, sticky="ew")
+
         
         # Label centrale per l'output
         self.output_frame = ctk.CTkFrame(self.root)
@@ -76,7 +80,24 @@ class ModernGUI:
             anchor="nw"
         )
         self.output_label.grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
-        
+
+        # bottone togle 
+        switch_var = ctk.IntVar(value=0)
+        self.switch=ctk.CTkSwitch(
+            master=self.root,text="Light mode",
+            variable=switch_var,
+            onvalue=1,
+            offvalue=0,
+            width=100,
+            height=20,
+            command=self.mode,
+            bg_color="transparent"
+        )
+        self.switch.grid(row=2, column=2, columnspan=1, pady=(0, 5), padx=10)
+
+        # grafico
+        self.canvas = None
+    
         # Checkbox
         self.checkbox_var = ctk.BooleanVar()
         self.checkbox = ctk.CTkCheckBox(
@@ -84,9 +105,10 @@ class ModernGUI:
             text="Browser visibile",
             variable=self.checkbox_var,
             font=ctk.CTkFont(size=12),
-            command=self.on_checkbox_change
+            command=self.on_checkbox_change,
+            bg_color="transparent",
         )
-        self.checkbox.grid(row=2, column=0, columnspan=3, pady=(0, 20), padx=20)
+        self.checkbox.grid(row=2, column=0, columnspan=3, pady=(0, 5))
         
         # Frame per i controlli in basso
         self.bottom_frame = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -147,11 +169,18 @@ class ModernGUI:
     def on_entry_focus_out(self, event):
         """Rimuove l'effetto glow quando l'entry perde il focus"""
         self.entry.configure(border_color="#00D4FF", border_width=2)
-        
+
     def process_input(self):
         """Processa l'input dall'utente"""
+        try:
+            self.canvas.get_tk_widget().destroy()  # Rimuove il grafico precedente
+        except:
+            pass
+        try:
+            self.dropdown.destroy()
+        except:
+            pass
         user_input = self.entry.get()
-        
         if not user_input.strip():
             self.update_output("⚠️ Inserisci un comando prima di inviare!")
             return
@@ -199,13 +228,61 @@ class ModernGUI:
         elif user_input=="/q":
             l = quanto_posso_prendere()
             output_text = "\n".join(l) if l else "⚠️ Nessun risultato trovato."
+        elif user_input=="/gg":
+            x,y = grafico_generale()
+            if x==[] or y==[]:
+                output_text = "⚠️ Nessun dato disponibile per il grafico."
+            else:
+                mpl.rcParams["figure.facecolor"] = "#2B2B2B"
+                mpl.rcParams["axes.facecolor"] = "#4D4D4D"
+                output_text="Grafico Andamento Generale:"
+                fig = plt.figure()
+                ax = fig.add_subplot()
+                ax.plot(x,y)
+                self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+        elif user_input=="/gm":
+            def menuHandle(choice):
+                try:
+                    self.canvas.get_tk_widget().destroy()
+                except:
+                    pass
+                self.canvas=None
+                x,y=graficoXmateria(choice)
+                mpl.rcParams["figure.facecolor"] = "#2B2B2B"
+                mpl.rcParams["axes.facecolor"] = "#4D4D4D"
+                fig = plt.figure()
+                ax = fig.add_subplot()
+                ax.plot(x,y)
+                self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+            output_text="Grafico x Materia:"
+            valori = materie()
+            if valori=="nessun dato":
+                output_text="⚠️ Nessun dato trovato"
+            else:
+                self.dropdown = ctk.CTkOptionMenu(
+                    master=self.output_frame,
+                    values=valori,
+                    command=menuHandle,
+                    bg_color="transparent"
+                )
+                self.dropdown.grid(row=1, column=0, pady=(0, 20), padx=20, sticky="nsew")
         else:
             output_text="non so cosa hai scritto...😵‍💫"
 
         # Simula l'elaborazione del comando
         self.update_output(output_text)
         self.entry.delete(0, tk.END)  # Pulisce l'entry
-        
+    def mode(self):
+        value = self.switch.get()
+        if value==0:
+            ctk.set_appearance_mode("dark")
+        elif value==1:
+            ctk.set_appearance_mode("light")
+
     def update_output(self, text):
         """Aggiorna il testo nell'area di output"""
         self.output_label.configure(text=text)
@@ -221,9 +298,6 @@ class ModernGUI:
         """Mostra la finestra di aiuto"""
         help_text = """
 🔷 GUIDA ALL'UTILIZZO:
-
-• Inserisci un comando nell'area di testo in basso
-• Premi INVIO o clicca 'Invia' per processare
 • Usa la checkbox per vedere l attivita su chrome quando usi /upd
 
 🔷 Comandi:
@@ -236,6 +310,8 @@ class ModernGUI:
 • '/csv'  <-- per aprire un file excel con i tuoi voti       
 • '/q'    <-- per sapere quanto puoi prendere in ogni materia
 • '/r'    <-- per ripulire il output box                     
+• '/gg'   <-- per vedere il grafico del andamento generale                     
+• '/gm'   <-- per vedere il grafico del andamento per materia                     
 
 """
         

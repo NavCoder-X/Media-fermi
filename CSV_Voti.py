@@ -12,7 +12,7 @@ def csv():
     materie_voto={}
     lista=[]
     iter=0
-    with open(voti_path,"r",encoding="utf-8") as file:
+    with open(voti_path,"r",encoding="latin1") as file:
         context=file.readlines()
         for i in context:
             i=i.strip()

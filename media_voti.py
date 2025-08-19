@@ -132,16 +132,10 @@ def chek():
 
 
 def media():
-
-    def resource_path(relative_path):
-        if hasattr(sys,"_MEIPASS"):
-            return os.path.join(sys._MEIPASS,relative_path)
-        return os.path.join(os.path.abspath("."),relative_path)
-    
     voti_path = "voti.txt"
 
 
-    with open(voti_path, "r",encoding="utf-8") as file:
+    with open(voti_path, "r",encoding="latin1") as file:
         n = 0
         voti = file.readlines()
         totale=0
@@ -176,4 +170,110 @@ def media():
             print("Nessun voto trovato o errore nel calcolo della media.")
             return "nessun voto trovato"
     
+def grafico_generale():
+    voti_path = "voti.txt"
+    data_x = []
+    data_y = [] 
+    n=0
+    totale=0
+    m=0
+    with open(voti_path, "r", encoding="latin1") as file:
+        voti = file.readlines()
+        for voto in voti:
+            voto = voto.strip()
+            if "EDUCAZIONE CIVICA" in voto:
+                break
+            if "-" in voto:
+                voto=voto.replace("-", "")
+                voto=float(voto)-0.25
+                n+=1
+            elif "+" in voto:
+                voto=voto.replace("+", "")
+                voto=float(voto)+0.25
+                n+=1
+            elif "½" in voto:
+                voto=voto.replace("½", "")
+                voto=float(voto)+0.5
+                n+=1
+            else:
+                try:
+                    voto=float(voto)
+                    n+=1
+                except:
+                    continue
+            totale+=voto
+            m=totale/n
+            data_x.append(n)
+            data_y.append(m)
+    return data_x , data_y
 
+def graficoXmateria(choice):
+    voti_path = "voti.txt"
+    data_x = []
+    data_y = []
+    n=0
+    totale=0
+    m=0
+    flag=False
+    with open(voti_path, "r", encoding="latin1") as file:
+        voti = file.readlines()
+        dati=[]
+        for voto in voti:
+            voto = voto.strip()
+            if choice in voto:
+                flag=True
+                continue
+            if flag:
+                if len(voto)>5:
+                    break
+                dati.append(voto)
+        inverso_dati=[]
+        for i in range(len(dati)-1,-1,-1):
+            inverso_dati.append(dati[i])
+        for voto in inverso_dati:
+            if "-" in voto:
+                voto=voto.replace("-", "")
+                voto=float(voto)-0.25
+                n+=1
+            elif "+" in voto:
+                voto=voto.replace("+", "")
+                voto=float(voto)+0.25
+                n+=1
+            elif "½" in voto:
+                voto=voto.replace("½", "")
+                voto=float(voto)+0.5
+                n+=1
+            else:
+                try:
+                    voto=float(voto)
+                    n+=1
+                except:
+                    break
+            try:
+                totale+=voto
+                m=totale/n
+                data_x.append(n)
+                data_y.append(m)
+            except:
+                pass
+    return data_x , data_y 
+
+
+def materie():
+    voti_path = "voti.txt"
+    data = []
+    with open(voti_path, "r", encoding="latin1") as file:
+        voti = file.readlines()
+        for voto in voti:
+            voto=voto.strip()       
+            if len(voto)>5:
+                if voto!="RELIGIONE CATTOLICA/ATTIVITA'ALTERNATIVA":
+                    data.append(voto)
+    try:
+        data.pop()
+    except:
+        data = "nessun dato"
+    return data
+
+    
+graficoXmateria("STORIA")
