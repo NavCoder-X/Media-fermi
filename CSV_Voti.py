@@ -12,7 +12,7 @@ def csv():
     materie_voto={}
     lista=[]
     iter=0
-    with open(voti_path,"r",encoding="latin1") as file:
+    with open(voti_path,"r",encoding="utf-8") as file:
         context=file.readlines()
         for i in context:
             i=i.strip()
@@ -31,14 +31,14 @@ def csv():
             else:
                 lista.append(i)
 
-    with open(csv_path, 'w', newline='') as csvfile:
+    with open(csv_path, 'w', newline='',encoding="utf-8") as csvfile:
         fieldnames = ['materia', 'voto_1','voto_2','voto_3','voto_4','voto_5','voto_6','voto_7','voto_8','voto_9','voto_10', 'media']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for i in materie_voto.keys():
             voti=materie_voto[i]
-            totale=0
+            totale=0 
             for n in range(len(voti)):
                 voto = voti[n].strip()
                 if "-" in voto:
@@ -47,7 +47,8 @@ def csv():
                 elif "+" in voto:
                     voto=voto.replace("+", "")
                     voto=float(voto)+0.25
-                elif "½" in voto:
+                elif "�" in voto or "½" in voto:
+                    voto=voto.replace("�", "")
                     voto=voto.replace("½", "")
                     voto=float(voto)+0.5
                 else:

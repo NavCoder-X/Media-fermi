@@ -86,7 +86,7 @@ def chek():
     # Trova tutte le righe della tabella con classe 'griglia rigtab'
     righe = driver.find_elements(By.CSS_SELECTOR, "tr[align='left']")
     if len(righe) >= 5:
-        righe[4].click()  # Indici Python partono da 0, quindi la quinta è [4]
+        righe[4].click()  # Indici Python partono da 0, quindi la quinta ? [4]
     else:
         stdout.write("\033[91mCredenziali errate!\033[0m\n")
         driver.quit()
@@ -122,7 +122,7 @@ def chek():
                             voti.append(testo)
     voti=voti[3:]
     print("Voti trovati:", voti)
-    with open(voti_path, "w") as file:
+    with open(voti_path, "w",encoding="utf-8") as file:
         for voto in voti:
             file.write(voto + "\n")
         file.write("riga adizzionale")
@@ -135,7 +135,7 @@ def media():
     voti_path = "voti.txt"
 
 
-    with open(voti_path, "r",encoding="latin1") as file:
+    with open(voti_path, "r",encoding="utf-8") as file:
         n = 0
         voti = file.readlines()
         totale=0
@@ -177,7 +177,7 @@ def grafico_generale():
     n=0
     totale=0
     m=0
-    with open(voti_path, "r", encoding="latin1") as file:
+    with open(voti_path, "r", encoding="utf-8") as file:
         voti = file.readlines()
         for voto in voti:
             voto = voto.strip()
@@ -215,7 +215,7 @@ def graficoXmateria(choice):
     totale=0
     m=0
     flag=False
-    with open(voti_path, "r", encoding="latin1") as file:
+    with open(voti_path, "r", encoding="utf-8") as file:
         voti = file.readlines()
         dati=[]
         for voto in voti:
@@ -232,7 +232,7 @@ def graficoXmateria(choice):
             inverso_dati.append(dati[i])
         for voto in inverso_dati:
             if "-" in voto:
-                voto=voto.replace("-", "")
+                voto=voto.replace("-", "") 
                 voto=float(voto)-0.25
                 n+=1
             elif "+" in voto:
@@ -262,7 +262,7 @@ def graficoXmateria(choice):
 def materie():
     voti_path = "voti.txt"
     data = []
-    with open(voti_path, "r", encoding="latin1") as file:
+    with open(voti_path, "r", encoding="utf-8") as file:
         voti = file.readlines()
         for voto in voti:
             voto=voto.strip()       
