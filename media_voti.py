@@ -8,10 +8,16 @@ from selenium.webdriver.chrome.options import Options
 import time
 from sys import stdout
 import sys, os
+import platform
+import subprocess
+import os
+csv_path = "example.csv"
 
 
 # chek voti
 def chek():
+
+    import csv  
     
     # path
     def resource_path(relative_path):
@@ -22,7 +28,6 @@ def chek():
     driver_path = resource_path("chromedriver.exe")
     user_path = "login/id.txt"
     pass_path = "login/password.txt"
-    voti_path = "voti.txt"
     browser_mode = resource_path("Browser_mode.txt")
 
     with open(user_path, "r") as file:
@@ -121,55 +126,136 @@ def chek():
                         if testo:  # solo paragrafi non vuoti
                             voti.append(testo)
     voti=voti[3:]
-    print("Voti trovati:", voti)
-    with open(voti_path, "w",encoding="utf-8") as file:
-        for voto in voti:
-            file.write(voto + "\n")
-        file.write("riga adizzionale")
+    # scrittura voti in csv file 
+    materie_voto={}
+    lista=[]
+    iter=0
+
+    for i in voti:
+        i=i.strip()
+        if i=="RELIGIONE CATTOLICA/ATTIVITA'ALTERNATIVA" or i=="O":
+            continue
+        if iter==0:
+            lista.append(i)
+            iter=1
+        elif len(str(i))>5:
+            try:
+                voti_coronologici = lista[1:]
+                voti_coronologici.reverse()  # Inverti l'ordine dei voti
+                materie_voto[lista[0]]=voti_coronologici
+            except:
+                continue
+            lista=[]
+            lista.append(i)
+        else:
+            lista.append(i)
+    # scrittura di ed civica
+    voti_coronologici = lista[1:]
+    voti_coronologici.reverse()  # Inverti l'ordine dei voti
+    materie_voto[lista[0]]=voti_coronologici
+
+    with open(csv_path, 'w', newline='',encoding="utf-8") as csvfile:
+        fieldnames = ['materia', 'voto_1','voto_2','voto_3','voto_4','voto_5','voto_6','voto_7','voto_8','voto_9','voto_10', 'media']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for i in materie_voto.keys():
+            voti=materie_voto[i]
+            totale=0 
+            for n in range(len(voti)):
+                voto = voti[n].strip()
+                if "-" in voto:
+                    voto=voto.replace("-", "")
+                    voto=float(voto)-0.25
+                elif "+" in voto:
+                    voto=voto.replace("+", "")
+                    voto=float(voto)+0.25
+                elif "�" in voto or "½" in voto:
+                    voto=voto.replace("�", "")
+                    voto=voto.replace("½", "")
+                    voto=float(voto)+0.5
+                else:
+                    voto=float(voto)
+                voti[n] = voto  # Convert to float for CSV
+                totale+=voto
+                m=totale/(len(voti))
+            while len(voti)<10:
+                voti.append("")
+            writer.writerow({'materia': i,
+                            fieldnames[1]:voti[0],
+                            fieldnames[2]:voti[1],
+                            fieldnames[3]:voti[2],
+                            fieldnames[4]:voti[3],
+                            fieldnames[5]:voti[4],
+                            fieldnames[6]:voti[5],
+                            fieldnames[7]:voti[6],
+                            fieldnames[8]:voti[7],
+                            fieldnames[9]:voti[8],
+                            fieldnames[10]:voti[9],
+                            fieldnames[11]:"{:.2f}".format(m).replace('.', ',')
+                            })
     driver.quit()
-    print("dati aggiornati!")
     return "dati aggiornati"
 
 
 def media():
-    voti_path = "voti.txt"
-
-
-    with open(voti_path, "r",encoding="utf-8") as file:
-        n = 0
-        voti = file.readlines()
-        totale=0
-        for voto in voti:
-            voto = voto.strip()
-            if "EDUCAZIONE CIVICA" in voto:
-                break
-            if "-" in voto:
-                voto=voto.replace("-", "")
-                voto=float(voto)-0.25
-                n+=1
-            elif "+" in voto:
-                voto=voto.replace("+", "")
-                voto=float(voto)+0.25
-                n+=1
-            elif "½" in voto:
-                voto=voto.replace("½", "")
-                voto=float(voto)+0.5
-                n+=1
-            else:
-                try:
-                    voto=float(voto)
-                    n+=1
-                except:
-                    continue
-            totale+=voto
-            m=totale/n
+    voti_processati = []
+    flag = 0
+    totale=0
+    voti = get_data()
+    for k in voti:
+        for voto in k[0:len(k)-1]:
+            if voto=="EDUCAZIONE CIVICA":
+                flag=11
+            elif flag>0:
+                flag-1
+                continue
+            if len(str(voto))>5:
+                continue
+            elif voto=="":
+                continue
+            voti_processati.append(voto)
+    n = len(voti_processati)
+    for voto in voti_processati:
         try:
-            print("Media dei voti:", m)
-            return m
+            voto = float(voto)
         except:
-            print("Nessun voto trovato o errore nel calcolo della media.")
-            return "nessun voto trovato"
+            print(f"Errore di conversione per il voto: {voto}")
+            continue
+        totale+=voto
+        m=totale/n
+    try:
+        print("Media dei voti:", m)
+        return m
+    except:
+        print("Nessun voto trovato o errore nel calcolo della media.")
+        return "nessun voto trovato"
     
+def quanto_posso_prendere():
+    data = get_data()
+    l = []
+    for i in data:
+        materia = i[0]
+        media = i[-1]
+        totale = 0
+        esito = ""
+        n = 1
+        for j in i[1:-1]:
+            if j == "":
+                continue
+            try:
+                totale += float(j.replace(",", "."))
+            except:
+                print(f"Errore di conversione per il voto: {j}")
+            n += 1
+        target = n * 6
+        v = target - totale
+        if v < 6:
+            esito = f"puoi prendere: {v:.2f}"
+        else:
+            esito = f"devi prendere: {v:.2f}"
+        l.append(f"{materia} | media:{media} | {esito}")
+    return l
 
     # grafico generale da fixare
 """ def grafico_generale():
@@ -210,71 +296,59 @@ def media():
     return data_x , data_y
  """
 def graficoXmateria(choice):
-    voti_path = "voti.txt"
     data_x = []
     data_y = []
     n=0
     totale=0
     m=0
     flag=False
-    with open(voti_path, "r", encoding="utf-8") as file:
-        voti = file.readlines()
-        dati=[]
-        for voto in voti:
+    voti = get_data()
+    dati=[]
+    for categoria in voti:
+        for voto in categoria:
             voto = voto.strip()
-            if choice in voto:
+            if choice==voto:
                 flag=True
                 continue
             if flag:
-                if len(voto)>5:
+                if len(voto)>5 or voto=="":
                     break
                 dati.append(voto)
-        inverso_dati=[]
-        for i in range(len(dati)-1,-1,-1):
-            inverso_dati.append(dati[i])
-        for voto in inverso_dati:
-            if "-" in voto:
-                voto=voto.replace("-", "") 
-                voto=float(voto)-0.25
-                n+=1
-            elif "+" in voto:
-                voto=voto.replace("+", "")
-                voto=float(voto)+0.25
-                n+=1
-            elif "½" in voto:
-                voto=voto.replace("½", "")
-                voto=float(voto)+0.5
-                n+=1
-            else:
-                try:
-                    voto=float(voto)
-                    n+=1
-                except:
-                    break
-            try:
-                totale+=voto
-                m=totale/n
-                data_x.append(n)
-                data_y.append(m)
-            except:
-                pass
+    for voto in dati:
+        voto=float(voto)
+        n+=1
+        totale+=voto
+        m=totale/n
+        data_x.append(n)
+        data_y.append(m)
     return data_x , data_y 
 
 
 def materie():
-    voti_path = "voti.txt"
     data = []
-    with open(voti_path, "r", encoding="utf-8") as file:
-        voti = file.readlines()
-        for voto in voti:
-            voto=voto.strip()       
-            if len(voto)>5:
-                if voto!="RELIGIONE CATTOLICA/ATTIVITA'ALTERNATIVA":
-                    data.append(voto)
+    voti = get_data()
+    for materia in voti:
+        materia=materia[0]       
+        data.append(materia)
     try:
         data.pop()
     except:
         data = "nessun dato"
     return data
 
-    
+def csv():
+    if platform.system() == 'Windows':
+        os.startfile(csv_path)
+    elif platform.system() == 'Darwin':
+        subprocess.call(['open', csv_path])
+    else:
+        subprocess.call(['xdg-open', csv_path])
+
+def get_data():
+    import csv
+    with open(csv_path, "r", encoding="utf-8") as file:
+        voti = csv.reader(file)
+        voti = list(voti)
+        voti = voti [1:]
+    return voti
+

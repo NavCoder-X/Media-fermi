@@ -1,8 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import sys,os
-from media_voti import chek,media,graficoXmateria,materie
-from CSV_Voti import csv, quanto_posso_prendere
+from media_voti import chek,media,graficoXmateria,materie,quanto_posso_prendere,csv
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -49,7 +48,10 @@ class ModernGUI:
         
         # Variabili per le animazioni
         self.animation_running = False
-        
+        # varibile contente i comandi usati dal inizio del programma
+        self.comandi_usati = []
+        self.indice_comandi = -1
+
         self.setup_gui()
         
     def setup_gui(self):
@@ -141,9 +143,6 @@ class ModernGUI:
             text_color=("#000000", "#FFFFFF")
         )
         self.entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-        self.entry.bind("<Return>", lambda event: self.process_input())
-        self.entry.bind("<FocusIn>", self.on_entry_focus_in)
-        self.entry.bind("<FocusOut>", self.on_entry_focus_out)
         
         # Bottone di invio
         self.submit_button = ctk.CTkButton(
@@ -161,7 +160,18 @@ class ModernGUI:
         
         # Focus sull'entry
         self.entry.focus()
-        
+    
+        # keybinds
+
+        self.entry.bind("<Return>", lambda event: self.process_input())
+        self.entry.bind("<FocusIn>", self.on_entry_focus_in)
+        self.entry.bind("<FocusOut>", self.on_entry_focus_out)
+
+        self.root.bind("<Shift-R>",self.ripulisci)
+
+        self.root.bind("<Up>",self.riprendi_comando_up)
+        self.root.bind("<Down>",self.riprendi_comando_down)
+
     def on_entry_focus_in(self, event):
         """Effetto glow quando l'entry riceve il focus"""
         self.entry.configure(border_color="#FF0000", border_width=2)
@@ -170,8 +180,31 @@ class ModernGUI:
         """Rimuove l'effetto glow quando l'entry perde il focus"""
         self.entry.configure(border_color="#00D4FF", border_width=2)
 
-    def process_input(self):
-        """Processa l'input dall'utente"""
+    def ripulisci(self,key):
+        self.distruggi_grafico()
+        self.update_output(" ")
+
+    def riprendi_comando_up(self,key):
+        if -len(self.comandi_usati)<self.indice_comandi:
+            self.indice_comandi-=1
+        try:
+            commando = self.comandi_usati[self.indice_comandi]
+            self.entry.delete(0, tk.END)  # Pulisce l'entry
+            self.entry.insert(0,commando)
+        except:
+            print("lista comandi vuota")
+
+    def riprendi_comando_down(self,key):
+        if -1>self.indice_comandi:
+            self.indice_comandi+=1
+        try:
+            commando = self.comandi_usati[self.indice_comandi]
+            self.entry.delete(0, tk.END)  # Pulisce l'entry
+            self.entry.insert(0,commando)
+        except:
+            print("lista comandi vuota")
+
+    def distruggi_grafico(self):
         try:
             self.canvas.get_tk_widget().destroy()  # Rimuove il grafico precedente
         except:
@@ -180,6 +213,10 @@ class ModernGUI:
             self.dropdown.destroy()
         except:
             pass
+
+    def process_input(self):
+        """Processa l'input dall'utente"""
+        self.distruggi_grafico()
         user_input = self.entry.get()
         if not user_input.strip():
             self.update_output("⚠️ Inserisci un comando prima di inviare!")
@@ -259,7 +296,9 @@ class ModernGUI:
                 self.dropdown.grid(row=1, column=0, pady=(0, 20), padx=20, sticky="nsew")
         else:
             output_text="non so cosa hai scritto...😵‍💫"
-
+        if output_text!="non so cosa hai scritto...😵‍":
+            self.comandi_usati.append(user_input)
+            self.indice_comandi = 0
         # Simula l'elaborazione del comando
         self.update_output(output_text)
         self.entry.delete(0, tk.END)  # Pulisce l'entry
@@ -283,17 +322,11 @@ class ModernGUI:
         
     def show_help(self):
         """Mostra la finestra di aiuto"""
-        try:
-            self.canvas.get_tk_widget().destroy()  # Rimuove il grafico precedente
-        except:
-            pass
-        try:
-            self.dropdown.destroy()
-        except:
-            pass
+        self.distruggi_grafico()
 
         help_text = """
 🔷 GUIDA ALL'UTILIZZO:
+
 • Usa la checkbox per vedere l attivita su chrome quando usi /upd
 
 🔷 Comandi:
@@ -312,7 +345,7 @@ class ModernGUI:
         
         # Mostra l'aiuto nel label centrale
         self.update_output(help_text)
-        
+
     def run(self):
         """Avvia l'applicazione"""
         self.root.mainloop()
