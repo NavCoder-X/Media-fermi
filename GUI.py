@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import sys,os
-from media_voti import chek,media,grafico_generale,graficoXmateria,materie
+from media_voti import chek,media,graficoXmateria,materie
 from CSV_Voti import csv, quanto_posso_prendere
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -217,7 +217,7 @@ class ModernGUI:
             if esito=="nessun voto trovato":
                 output_text="⚠️Nessun voto trovato!"
             else:
-                output_text=f"📊Media Generale: {esito:.2f}"
+                output_text=f"📈Media Generale: {esito:.2f}"
         elif user_input=="/csv":
             self.update_output("📂 Il file si sta aprendo...")
             self.root.update_idletasks()
@@ -228,20 +228,7 @@ class ModernGUI:
         elif user_input=="/q":
             l = quanto_posso_prendere()
             output_text = "\n".join(l) if l else "⚠️ Nessun risultato trovato."
-        elif user_input=="/gg":
-            x,y = grafico_generale()
-            if x==[] or y==[]:
-                output_text = "⚠️ Nessun dato disponibile per il grafico."
-            else:
-                mpl.rcParams["figure.facecolor"] = "#2B2B2B"
-                mpl.rcParams["axes.facecolor"] = "#4D4D4D"
-                output_text="Grafico Andamento Generale:"
-                fig = plt.figure()
-                ax = fig.add_subplot()
-                ax.plot(x,y)
-                self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
-                self.canvas.draw()
-                self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+
         elif user_input=="/gm":
             def menuHandle(choice):
                 try:
@@ -296,6 +283,15 @@ class ModernGUI:
         
     def show_help(self):
         """Mostra la finestra di aiuto"""
+        try:
+            self.canvas.get_tk_widget().destroy()  # Rimuove il grafico precedente
+        except:
+            pass
+        try:
+            self.dropdown.destroy()
+        except:
+            pass
+
         help_text = """
 🔷 GUIDA ALL'UTILIZZO:
 • Usa la checkbox per vedere l attivita su chrome quando usi /upd
@@ -310,7 +306,6 @@ class ModernGUI:
 • '/csv'  <-- per aprire un file excel con i tuoi voti       
 • '/q'    <-- per sapere quanto puoi prendere in ogni materia
 • '/r'    <-- per ripulire il output box                     
-• '/gg'   <-- per vedere il grafico del andamento generale                     
 • '/gm'   <-- per vedere il grafico del andamento per materia                     
 
 """
@@ -326,3 +321,22 @@ class ModernGUI:
 if __name__ == "__main__":
     app = ModernGUI()
     app.run()
+
+
+
+# funzione grafico generale che non funziona in ordine cronologico dei voti
+"""         elif user_input=="/gg":
+            x,y = grafico_generale()
+            if x==[] or y==[]:
+                output_text = "⚠️ Nessun dato disponibile per il grafico."
+            else:
+                mpl.rcParams["figure.facecolor"] = "#2B2B2B"
+                mpl.rcParams["axes.facecolor"] = "#4D4D4D"
+                output_text="Grafico Andamento Generale:"
+                fig = plt.figure()
+                ax = fig.add_subplot()
+                ax.plot(x,y)
+                self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+ """

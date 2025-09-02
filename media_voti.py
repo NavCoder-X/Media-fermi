@@ -170,7 +170,9 @@ def media():
             print("Nessun voto trovato o errore nel calcolo della media.")
             return "nessun voto trovato"
     
-def grafico_generale():
+
+    # grafico generale da fixare
+""" def grafico_generale():
     voti_path = "voti.txt"
     data_x = []
     data_y = [] 
@@ -206,7 +208,7 @@ def grafico_generale():
             data_x.append(n)
             data_y.append(m)
     return data_x , data_y
-
+ """
 def graficoXmateria(choice):
     voti_path = "voti.txt"
     data_x = []
@@ -276,4 +278,3 @@ def materie():
     return data
 
     
-graficoXmateria("STORIA")
