@@ -1,4 +1,3 @@
-# media voti
 
 # librerie
 from selenium import webdriver
@@ -11,13 +10,14 @@ import sys, os
 import platform
 import subprocess
 import os
-csv_path = "example.csv"
+from openpyxl import workbook 
+from openpyxl.styles import PatternFill , Font ,Alignment ,Border ,Side
 
+excel_path = "voti.xlsx"
+numer_materie_path = "n_materie.txt"
 
 # chek voti
 def chek():
-
-    import csv  
     
     # path
     def resource_path(relative_path):
@@ -30,6 +30,7 @@ def chek():
     pass_path = "login/password.txt"
     browser_mode = resource_path("Browser_mode.txt")
 
+    #controllo credenziali
     with open(user_path, "r") as file:
         codice = file.read().strip()
     if codice=="":
@@ -40,7 +41,8 @@ def chek():
     if password=="":
         print("nessuna password trovata")
         return "nessuna password"
-    # usa in background
+    
+    # usa in background e altre opzioni
     option = Options()
     with open(browser_mode,"r") as f:
         status = f.read()
@@ -66,6 +68,7 @@ def chek():
     bottone = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
     bottone.click()
 
+    # naviga fino al anno precedente
     time.sleep(10)
     try:
         bottone = driver.find_element(By.CSS_SELECTOR, "button[type='button']")
@@ -73,10 +76,11 @@ def chek():
     except:
         pass
     try:
-        anno_precedente = driver.find_element(By.CSS_SELECTOR, "p[class='handwriting_2 ']")
+        anno_precedente = driver.find_element(By.CSS_SELECTOR, "p[class='voce_menu_colonna_sx']")
         anno_precedente.click()
     except:
         pass
+
     # Passa alla nuova finestra/scheda
     try:
         time.sleep(2)  # attesa breve per apertura finestra
@@ -86,8 +90,8 @@ def chek():
         driver.quit()
         return "credenziali errate"
         
+    time.sleep(10) # attesa per caricamento pagina
 
-    time.sleep(10)
     # Trova tutte le righe della tabella con classe 'griglia rigtab'
     righe = driver.find_elements(By.CSS_SELECTOR, "tr[align='left']")
     if len(righe) >= 5:
@@ -126,11 +130,14 @@ def chek():
                         if testo:  # solo paragrafi non vuoti
                             voti.append(testo)
     voti=voti[3:]
-    # scrittura voti in csv file 
+    driver.quit()
+
+    # scrittura voti in excel file 
     materie_voto={}
     lista=[]
     iter=0
 
+    # rendere tutti i voti float ed escludere religione
     for i in voti:
         i=i.strip()
         if i=="RELIGIONE CATTOLICA/ATTIVITA'ALTERNATIVA" or i=="O":
@@ -148,61 +155,85 @@ def chek():
             lista=[]
             lista.append(i)
         else:
+            if "EDUCAZIONE CIVICA" in i:
+                break
+            if "-" in i:
+                i=i.replace("-", "")
+                i=float(i)-0.25
+            elif "+" in i:
+                i=i.replace("+", "")
+                i=float(i)+0.25
+            elif "½" in i:
+                i=i.replace("½", "")
+                i=float(i)+0.5
+            else:
+                try:
+                    i=float(i)
+                except:
+                    continue
             lista.append(i)
+
     # scrittura di ed civica
     voti_coronologici = lista[1:]
     voti_coronologici.reverse()  # Inverti l'ordine dei voti
     materie_voto[lista[0]]=voti_coronologici
 
-    with open(csv_path, 'w', newline='',encoding="utf-8") as csvfile:
-        fieldnames = ['materia', 'voto_1','voto_2','voto_3','voto_4','voto_5','voto_6','voto_7','voto_8','voto_9','voto_10', 'media']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # scrittura numero materie
+    numero_materie = len(materie_voto.keys())
+    with open(numer_materie_path,"w") as f:
+        f.write(str(numero_materie))
 
-        writer.writeheader()
-        for i in materie_voto.keys():
-            voti=materie_voto[i]
-            totale=0 
-            for n in range(len(voti)):
-                voto = voti[n].strip()
-                if "-" in voto:
-                    voto=voto.replace("-", "")
-                    voto=float(voto)-0.25
-                elif "+" in voto:
-                    voto=voto.replace("+", "")
-                    voto=float(voto)+0.25
-                elif "�" in voto or "½" in voto:
-                    voto=voto.replace("�", "")
-                    voto=voto.replace("½", "")
-                    voto=float(voto)+0.5
-                else:
-                    voto=float(voto)
-                voti[n] = voto  # Convert to float for CSV
-                totale+=voto
-                m=totale/(len(voti))
-            while len(voti)<10:
-                voti.append("")
-            writer.writerow({'materia': i,
-                            fieldnames[1]:voti[0],
-                            fieldnames[2]:voti[1],
-                            fieldnames[3]:voti[2],
-                            fieldnames[4]:voti[3],
-                            fieldnames[5]:voti[4],
-                            fieldnames[6]:voti[5],
-                            fieldnames[7]:voti[6],
-                            fieldnames[8]:voti[7],
-                            fieldnames[9]:voti[8],
-                            fieldnames[10]:voti[9],
-                            fieldnames[11]:"{:.2f}".format(m).replace('.', ',')
-                            })
-    driver.quit()
+   # creazione excel file
+    wb = workbook.Workbook()
+    ws = wb.active
+    ws.title = "Voti"
+
+    ws.append(['Materia', 'Voto_1','Voto_2','Voto_3','Voto_4','Voto_5','Voto_6','Voto_7','Voto_8','Voto_9','Voto_10', 'Media'])
+
+    riga = 2
+    for i in materie_voto.keys():
+        voti=materie_voto[i]
+        ws.append([i]+voti)
+        ws[f"L{riga}"] = f"=AVERAGE(B{riga}:K{riga})"
+        riga += 1
+
+    # stile excel
+    stile_allineamento = Alignment(horizontal="center",vertical="center")
+    bold = Font(bold=True)
+    fieldnames_background_color = PatternFill(start_color="99D6FB",fill_type="solid")
+    materie_background_color = PatternFill(start_color="F6FE9F",fill_type="solid")
+    voti_background_color = PatternFill(start_color="B6B6B6",fill_type="solid")
+    medie_background_color = PatternFill(start_color="FFAFE1",fill_type="solid")
+    thin = Side(style="thin",color="000000")
+    bordo = Border(left=thin,top=thin,right=thin,bottom=thin)
+    for row in ws.iter_rows(min_row=1,max_row=len(materie_voto.keys())+1,min_col=1,max_col=12):
+        for cell in row:
+            cell.alignment = stile_allineamento
+            cell.border = bordo
+            if cell.row==1:
+                cell.fill = fieldnames_background_color
+                cell.font = bold
+            elif cell.row>1 and cell.column==1:
+                cell.fill = materie_background_color
+                cell.font = bold
+            elif cell.row>1 and cell.column==12:
+                cell.fill = medie_background_color
+            else:
+                cell.fill = voti_background_color
+            
+    ws.column_dimensions["A"].width = 55
+
+
+    wb.save(excel_path)
     return "dati aggiornati"
 
-
 def media():
+    # calcolo media senza inculedere ed civica
     voti_processati = []
     flag = 0
     totale=0
     voti = get_data()
+
     for k in voti:
         for voto in k[0:len(k)-1]:
             if voto=="EDUCAZIONE CIVICA":
@@ -212,10 +243,11 @@ def media():
                 continue
             if len(str(voto))>5:
                 continue
-            elif voto=="":
+            elif voto==None:
                 continue
             voti_processati.append(voto)
     n = len(voti_processati)
+
     for voto in voti_processati:
         try:
             voto = float(voto)
@@ -224,6 +256,7 @@ def media():
             continue
         totale+=voto
         m=totale/n
+
     try:
         print("Media dei voti:", m)
         return m
@@ -234,19 +267,17 @@ def media():
 def quanto_posso_prendere():
     data = get_data()
     l = []
+
     for i in data:
         materia = i[0]
-        media = i[-1]
+        media = round(i[-1],2)
         totale = 0
         esito = ""
         n = 1
         for j in i[1:-1]:
-            if j == "":
+            if j == None:
                 continue
-            try:
-                totale += float(j.replace(",", "."))
-            except:
-                print(f"Errore di conversione per il voto: {j}")
+            totale += float(j)
             n += 1
         target = n * 6
         v = target - totale
@@ -257,44 +288,6 @@ def quanto_posso_prendere():
         l.append(f"{materia} | media:{media} | {esito}")
     return l
 
-    # grafico generale da fixare
-""" def grafico_generale():
-    voti_path = "voti.txt"
-    data_x = []
-    data_y = [] 
-    n=0
-    totale=0
-    m=0
-    with open(voti_path, "r", encoding="utf-8") as file:
-        voti = file.readlines()
-        for voto in voti:
-            voto = voto.strip()
-            if "EDUCAZIONE CIVICA" in voto:
-                break
-            if "-" in voto:
-                voto=voto.replace("-", "")
-                voto=float(voto)-0.25
-                n+=1
-            elif "+" in voto:
-                voto=voto.replace("+", "")
-                voto=float(voto)+0.25
-                n+=1
-            elif "½" in voto:
-                voto=voto.replace("½", "")
-                voto=float(voto)+0.5
-                n+=1
-            else:
-                try:
-                    voto=float(voto)
-                    n+=1
-                except:
-                    continue
-            totale+=voto
-            m=totale/n
-            data_x.append(n)
-            data_y.append(m)
-    return data_x , data_y
- """
 def graficoXmateria(choice):
     data_x = []
     data_y = []
@@ -304,27 +297,31 @@ def graficoXmateria(choice):
     flag=False
     voti = get_data()
     dati=[]
+
     for categoria in voti:
         for voto in categoria:
-            voto = voto.strip()
+            try:
+                voto = voto.strip()
+            except:
+                pass
             if choice==voto:
                 flag=True
                 continue
             if flag:
-                if len(voto)>5 or voto=="":
+                if len(str(voto))>5 or voto==None:
                     break
                 dati.append(voto)
+
     for voto in dati:
-        voto=float(voto)
         n+=1
         totale+=voto
         m=totale/n
-        data_x.append(n)
-        data_y.append(m)
+        data_x.append(n) # numero del voto
+        data_y.append(m) # media progressiva
     return data_x , data_y 
 
-
 def materie():
+
     data = []
     voti = get_data()
     for materia in voti:
@@ -338,17 +335,44 @@ def materie():
 
 def csv():
     if platform.system() == 'Windows':
-        os.startfile(csv_path)
+        os.startfile(excel_path)
     elif platform.system() == 'Darwin':
-        subprocess.call(['open', csv_path])
+        subprocess.call(['open', excel_path])
     else:
-        subprocess.call(['xdg-open', csv_path])
+        subprocess.call(['xdg-open', excel_path])
 
 def get_data():
-    import csv
-    with open(csv_path, "r", encoding="utf-8") as file:
-        voti = csv.reader(file)
-        voti = list(voti)
-        voti = voti [1:]
-    return voti
+
+    with open(numer_materie_path,"r") as f:
+        numero_materie = int(f.read())
+
+    lista_voti=[]
+    voti=[]
+
+    from openpyxl import load_workbook
+
+    wb = load_workbook("voti.xlsx",data_only=True)
+    ws = wb.active
+
+    for row in ws.iter_rows(min_row=1,max_row=numero_materie,min_col=1,max_col=12):
+        for cell in row:
+            if cell.row==1:
+                continue
+            voti.append(cell.value)
+            if cell.column==12:
+                lista_voti.append(voti)
+                voti=[]
+    # calcolo manulae della media in quanto excel restituisce una formula
+    for r in lista_voti:
+        totale = 0
+        n = 0
+        for j in r[1:-1]:
+            if j==None:
+                continue
+            totale+=j
+            n+=1
+        m=totale/n
+        r[-1]=m
+    return lista_voti
+
 

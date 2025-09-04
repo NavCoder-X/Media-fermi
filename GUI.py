@@ -57,7 +57,7 @@ class ModernGUI:
     def setup_gui(self):
         # Label di saluto in alto
         with open(nome_path, "r") as file:
-            nome = file.read()
+            nome = file.read() # ricava nome
         self.saluto_label = ctk.CTkLabel(
             self.root,
             text=f"💻 Ciao {nome} 💻",
@@ -302,6 +302,7 @@ class ModernGUI:
         # Simula l'elaborazione del comando
         self.update_output(output_text)
         self.entry.delete(0, tk.END)  # Pulisce l'entry
+        
     def mode(self):
         value = self.switch.get()
         if value==0:
@@ -357,19 +358,3 @@ if __name__ == "__main__":
 
 
 
-# funzione grafico generale che non funziona in ordine cronologico dei voti
-"""         elif user_input=="/gg":
-            x,y = grafico_generale()
-            if x==[] or y==[]:
-                output_text = "⚠️ Nessun dato disponibile per il grafico."
-            else:
-                mpl.rcParams["figure.facecolor"] = "#2B2B2B"
-                mpl.rcParams["axes.facecolor"] = "#4D4D4D"
-                output_text="Grafico Andamento Generale:"
-                fig = plt.figure()
-                ax = fig.add_subplot()
-                ax.plot(x,y)
-                self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
-                self.canvas.draw()
-                self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
- """
