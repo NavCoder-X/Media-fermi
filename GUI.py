@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import sys,os
-from media_voti import chek,media,graficoXmateria,materie,quanto_posso_prendere,csv
+from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_generale,graficoXmateria,materie
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -12,11 +12,11 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS,relative_path)
     return os.path.join(os.path.abspath("."),relative_path)
 
-nome_path = "login/nome.txt"
-user_path = "login/id.txt"
-pass_path = "login/password.txt"
-icona_path = resource_path("icona.ico")
-browser_mode = resource_path("Browser_mode.txt")
+nome_path = "archivio/login/nome.txt"
+user_path = "archivio/login/id.txt"
+pass_path = "archivio/login/password.txt"
+icona_path = resource_path("assets/icona.ico")
+browser_mode = resource_path("assets/Browser_mode.txt")
 
 
 class ModernGUI:
@@ -166,6 +166,7 @@ class ModernGUI:
         self.entry.bind("<Return>", lambda event: self.process_input())
         self.entry.bind("<FocusIn>", self.on_entry_focus_in)
         self.entry.bind("<FocusOut>", self.on_entry_focus_out)
+        self.entry.bind("<Control-BackSpace>", self.cancella_parola)
 
         self.root.bind("<Shift-R>",self.ripulisci)
 
@@ -183,6 +184,15 @@ class ModernGUI:
     def ripulisci(self,key):
         self.distruggi_grafico()
         self.update_output(" ")
+    
+    def cancella_parola(self,key):
+        testo = self.entry.get()
+        for i in range(len(testo)-1,-1,-1):
+            if testo[i]==" ":
+                self.entry.delete(i,tk.END)
+                break
+            elif i==0:
+                self.entry.delete(0,tk.END)
 
     def riprendi_comando_up(self,key):
         if -len(self.comandi_usati)<self.indice_comandi:
@@ -255,17 +265,32 @@ class ModernGUI:
                 output_text="⚠️Nessun voto trovato!"
             else:
                 output_text=f"📈Media Generale: {esito:.2f}"
-        elif user_input=="/csv":
+        elif user_input=="/excel":
             self.update_output("📂 Il file si sta aprendo...")
             self.root.update_idletasks()
-            csv()
+            excel()
             output_text = "File CSV aperto con successo!👌"   
         elif user_input=="/r":
             output_text="L'output del programma apparirà qui..."
         elif user_input=="/q":
             l = quanto_posso_prendere()
             output_text = "\n".join(l) if l else "⚠️ Nessun risultato trovato."
-
+        elif user_input=="/gg":
+            try:
+                self.canvas.get_tk_widget().destroy()
+            except:
+                pass
+            self.canvas=None
+            x,y=grafico_generale()
+            mpl.rcParams["figure.facecolor"] = "#2B2B2B"
+            mpl.rcParams["axes.facecolor"] = "#4D4D4D"
+            fig = plt.figure()
+            ax = fig.add_subplot()
+            ax.plot(x,y)
+            self.canvas = FigureCanvasTkAgg(fig,master=self.output_label)
+            self.canvas.draw()
+            self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
+            output_text="Grafico Generale:"
         elif user_input=="/gm":
             def menuHandle(choice):
                 try:
@@ -337,10 +362,11 @@ class ModernGUI:
 • '/pass' <-- per mettere la tua password di classeviva      
 • '/upd'  <-- per aggiornare i dati sui tuoi voti            
 • '/m'    <-- per visualizzare la tua media generale         
-• '/csv'  <-- per aprire un file excel con i tuoi voti       
+• '/excel'  <-- per aprire un file excel con i tuoi voti       
 • '/q'    <-- per sapere quanto puoi prendere in ogni materia
 • '/r'    <-- per ripulire il output box                     
-• '/gm'   <-- per vedere il grafico del andamento per materia                     
+• '/gm'   <-- per vedere il grafico del andamento per materia 
+• '/gg'   <-- per vedere il grafico del andamento generale 
 
 """
         
