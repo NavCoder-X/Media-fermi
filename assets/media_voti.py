@@ -4,6 +4,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 from sys import stdout
 import sys, os
@@ -12,14 +14,17 @@ import subprocess
 import os
 from openpyxl import workbook 
 from openpyxl.styles import PatternFill , Font ,Alignment ,Border ,Side
+from openpyxl.formatting.rule import CellIsRule
 import json
 from datetime import date
+import keyring as ky
 
-user_path = "archivio/login/id.txt"
-pass_path = "archivio/login/password.txt"
 excel_path = "voti.xlsx"
 numer_materie_path = "archivio/n_materie.txt"
 grafico_gen_path = "archivio/dati_grafico.json"
+service_name_id = "Classeviva-Medie-id"
+service_name_password = "Classeviva-Medie-password"
+
 
 # chek voti
 def chek():
@@ -34,14 +39,12 @@ def chek():
     browser_mode = resource_path("assets/Browser_mode.txt")
 
     #controllo credenziali
-    with open(user_path, "r") as file:
-        codice = file.read().strip()
-    if codice=="":
+    codice = ky.get_password(service_name_id,"user")
+    if codice=="" or codice==None:
         print("nessun codice")
         return "nessun id"
-    with open(pass_path, "r") as file:
-        password = file.read().strip()
-    if password=="":
+    password = ky.get_password(service_name_password,"user")
+    if password=="" or password==None:
         print("nessuna password trovata")
         return "nessuna password"
     
@@ -72,28 +75,28 @@ def chek():
     bottone.click()
 
     # naviga fino al anno precedente
-    time.sleep(10)
+    time.sleep(5)
     try:
-        bottone = driver.find_element(By.CSS_SELECTOR, "button[type='button']")
+        wait = WebDriverWait(driver, 10)
+        bottone = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='button']")))
         bottone.click()
     except:
         pass
     try:
-        anno_precedente = driver.find_element(By.CSS_SELECTOR, "p[class='voce_menu_colonna_sx']")
+        wait = WebDriverWait(driver, 10)
+        anno_precedente = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "p.voce_menu_colonna_sx")))
         anno_precedente.click()
     except:
         pass
-
     # Passa alla nuova finestra/scheda
     try:
-        time.sleep(2)  # attesa breve per apertura finestra
         windows = driver.window_handles
         driver.switch_to.window(windows[-1])
     except:
         driver.quit()
         return "credenziali errate"
         
-    time.sleep(10) # attesa per caricamento pagina
+    time.sleep(2) # attesa per caricamento pagina
 
     # Trova tutte le righe della tabella con classe 'griglia rigtab'
     righe = driver.find_elements(By.CSS_SELECTOR, "tr[align='left']")
@@ -112,7 +115,7 @@ def chek():
         driver.quit()
         return "credenziali errate"
 
-    time.sleep(8)
+    time.sleep(4)
 
     # Trova tutti i voti nei paragrafi all'interno della struttura tr>td>div>p
     date=[]
@@ -281,6 +284,11 @@ def chek():
             
     ws.column_dimensions["A"].width = 55
 
+    # formattazione celle 
+    font = Font(bold=True,color="ff0000")
+    celle_da_formattare = f"B2:L{numero_materie+1}"
+    rule = CellIsRule(operator="lessThan",formula=["6"],font=font)
+    ws.conditional_formatting.add(celle_da_formattare,rule)
 
     wb.save(excel_path)
     return "dati aggiornati"

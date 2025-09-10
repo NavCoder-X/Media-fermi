@@ -5,6 +5,7 @@ from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_gen
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import keyring as ky
 
 # path
 def resource_path(relative_path):
@@ -12,11 +13,11 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS,relative_path)
     return os.path.join(os.path.abspath("."),relative_path)
 
-nome_path = "archivio/login/nome.txt"
-user_path = "archivio/login/id.txt"
-pass_path = "archivio/login/password.txt"
+nome_path = "archivio/nome.txt"
 icona_path = resource_path("assets/icona.ico")
 browser_mode = resource_path("assets/Browser_mode.txt")
+service_name_id = "Classeviva-Medie-id"
+service_name_password = "Classeviva-Medie-password"
 
 
 class ModernGUI:
@@ -29,7 +30,7 @@ class ModernGUI:
         self.root = ctk.CTk()
         self.root.title("Medie-Fermi")
         self.root.geometry("600x500")
-        self.root.resizable(True, True)
+        self.root.resizable(False, False)
         
         # Imposta l'icona 
         try:
@@ -239,13 +240,11 @@ class ModernGUI:
             self.saluto_label.configure(text=f"💻 Ciao {content} 💻")
         elif "/id" in user_input:
             content = user_input[4::]
-            with open(user_path, "w") as file:
-                file.write(content)
+            ky.set_password(service_name_id,"user",content)
             output_text = "id aggiornato!"
         elif "/pass" in user_input:
             content = user_input[6::]
-            with open(pass_path, "w") as file:
-                file.write(content)
+            ky.set_password(service_name_password,"user",content)
             output_text = "password aggiornata!"
         elif user_input=="/upd":
             self.update_output("📡Aggiornamento in corso...\n🕓ci potrebbero volere alcuni minuti\n🛜assicurati di avere una buona conessione.")
@@ -256,7 +255,7 @@ class ModernGUI:
             elif esito=="nessun id":
                 output_text="⚠️Nessun id trovato! Inserisci '/id' per aggiungerlo."
             elif esito=="credenziali errate":
-                output_text="⚠️Credenziali errate, perfavore metti quelle giuste"
+                output_text="⚠️Credenziali errate o conessione lenta"
             elif esito=="dati aggiornati":
                 output_text="Dati aggiornati!🙆‍♂️"
         elif user_input=="/m":
