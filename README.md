@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="assets/logo.png" alt="App Screenshot" width="600"/>
+  <img src="assets/logo.png" alt="logo" width="600"/>
 </p>
 
 # 💡Introduzione:
