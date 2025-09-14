@@ -1,7 +1,5 @@
-
 # librerie
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -18,15 +16,73 @@ from openpyxl.formatting.rule import CellIsRule
 import json
 from datetime import date
 import keyring as ky
+import fpdf as fp
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
 
 excel_path = "voti.xlsx"
 numer_materie_path = "archivio/n_materie.txt"
 grafico_gen_path = "archivio/dati_grafico.json"
 service_name_id = "Classeviva-Medie-id"
 service_name_password = "Classeviva-Medie-password"
+nome_path = "archivio/nome.txt"
+path_logo_1 = "assets/logo.png"
+path_logo_2 = "assets/dashboard.png"
+path_grafico = "assets/grafico.png"
+path_ciambella = "assets/ciambella.png"
+path_qr_code = ["assets/qrcode_discord.png","assets/qrcode_github.png","assets/qrcode_instagram.png"]
+path_report = "archivio/report.pdf"
 
 
 # chek voti
+def login():
+
+    # path
+    def resource_path(relative_path):
+        if hasattr(sys,"_MEIPASS"):
+            return os.path.join(sys._MEIPASS,relative_path)
+        return os.path.join(os.path.abspath("."),relative_path)
+
+    browser_mode = resource_path("assets/Browser_mode.txt")
+
+    #controllo credenziali
+    codice = ky.get_password(service_name_id,"user")
+    if codice=="" or codice==None:
+        print("nessun codice")
+        return "nessun id"
+    password = ky.get_password(service_name_password,"user")
+    if password=="" or password==None:
+        print("nessuna password trovata")
+        return "nessuna password"
+    
+    # usa in background e altre opzioni
+    option = Options()
+    with open(browser_mode,"r") as f:
+        status = f.read()
+    if status=="0":
+        option.add_argument("--headless")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-gpu")
+    option.add_argument("--disable-dev-shm-usage")
+    option.add_experimental_option("detach", True) # non chiude il browser
+
+    # setup driver
+    driver = webdriver.Chrome(options=option)
+
+
+    # open the website
+    driver.get("https://web.spaggiari.eu/home/app/default/login.php")
+
+    # login
+    user=driver.find_element(By.ID, "login")
+    password_log=driver.find_element(By.ID, "password")
+    user.send_keys(codice)
+    password_log.send_keys(password)
+    bottone = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+    bottone.click()
+
+    return "ok"
 def chek():
     
     # path
@@ -35,7 +91,6 @@ def chek():
             return os.path.join(sys._MEIPASS,relative_path)
         return os.path.join(os.path.abspath("."),relative_path)
 
-    driver_path = resource_path("assets/chromedriver.exe")
     browser_mode = resource_path("assets/Browser_mode.txt")
 
     #controllo credenziali
@@ -59,8 +114,7 @@ def chek():
     option.add_argument("--disable-dev-shm-usage")
 
     # setup driver
-    service = Service(driver_path)  
-    driver = webdriver.Chrome(service=service,options=option)
+    driver = webdriver.Chrome(options=option)
 
 
     # open the website
@@ -299,6 +353,8 @@ def media():
     flag = 0
     totale=0
     voti = get_data()
+    if voti == "nessun voto trovato":
+        return "nessun voto trovato"
 
     for k in voti:
         for voto in k[0:len(k)-1]:
@@ -463,8 +519,172 @@ def get_data():
                 continue
             totale+=j
             n+=1
-        m=totale/n
+        try:
+            m=totale/n
+        except ZeroDivisionError:
+            return "nessun voto trovato"
         r[-1]=m
     return lista_voti
 
+def report():
+    # varibili di supporto
+    cord_x=0
+    cord_y=0
+    codice = ky.get_password(service_name_id,"user")
+    with open(nome_path,"r") as f:
+        nome = f.read()
+    m = media()
+    if m=="nessun voto trovato":
+        return "nessun voto trovato"
+    dati = get_data()
+    materie_insufficenti=0
+    totale_verifiche = 0
+    totale_insufficenze = 0
+    totale_dieci = 0
+    materia_media = []
+    for i in dati:
+        materia_media.append([i[0],[i][-1]])
+    
+    for i in materia_media: # calcolo info
+        for j in i[-1][1:-1]:
+            if j==None or str(j).strip()=="":
+                continue
+            totale_verifiche+=1
+            if j<6:
+                totale_insufficenze+=1
+            elif j==10:
+                totale_dieci+=1
+            
 
+    # crea pdf vuoto (orientazione,formato,unita di misura)
+    pdf = fp.FPDF("portrait",format=(220, 300),unit="mm")
+
+    # aggiungi pagina
+    pdf.add_page()
+
+    # imposta font (nome,size,stile="BUI")
+    pdf.set_font("Arial", size=16,style='B')
+
+    # immagine (cordinate,width)
+    pdf.image(path_logo_1, x=0, y=0, w=50)
+    pdf.image(path_logo_2, x=180 , y=4, w=30)
+
+    # aggiungi testo (width,height,text,ln,align,bordo,fill,x,y)
+    pdf.cell(200, 10, txt="Report Voti", ln=1, align="C")
+
+    # linea
+    pdf.line(10, 26, 210, 26)
+
+
+    pdf.set_font("Arial", size=12,style='')
+    pdf.cell(100, 20, txt=f"Studente: {nome}    id:{codice}", ln=False, align="L")
+
+
+    # istogramma a linee orizzontali
+    pdf.set_xy(10, 40)
+    cord_x = 10
+    cord_y = 40
+    cord_y_area_istogrammi = 0
+    materia_media.sort(key=lambda x:x[-1][-1],reverse=1)
+    for i in materia_media:
+        cord_y+=10
+        cord_y_area_istogrammi+=10
+        materia = i[0]
+        m_materia = round(i[-1][-1],2)
+        width_cella = int(m_materia*10)
+        m_materia_formattato = f"**{m_materia}**"
+
+        if m_materia<6:
+            pdf.set_fill_color(255,0,0) #rosso
+            materie_insufficenti+=1
+        else:
+            pdf.set_fill_color(0, 100, 200) # blue
+
+        pdf.set_font("Arial", size=10)
+        pdf.cell(100, 4, txt=materia, ln=True, align="L")
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(width_cella, 5, txt=m_materia_formattato, ln=True, align="R", fill=True,markdown=True)
+        pdf.set_font("Arial", size=12,style='')
+        pdf.set_text_color(0, 0, 0)
+
+    # ciambella
+    cord_y_area_istogrammi = 120
+    m = m*10
+    if m<60:
+        colore = "#ff0000"
+    else:
+        colore = "#00FF4C"
+    plt.figure(figsize=(6,6))
+    plt.pie(
+        [m,100-m],
+        colors=[colore,'#FFFFFF'],
+        startangle=90,
+        counterclock=False,
+        wedgeprops={'edgecolor':'black','linewidth':0.3,"width":0.3}
+    )
+    plt.text(0,0,str(round(m/10,2)),ha="center",va="center",fontsize=40,color="black")
+    plt.axis('equal')
+    plt.savefig(path_ciambella,transparent=True)
+
+    pdf.image(path_ciambella, x=160, y=cord_y_area_istogrammi/4, w=50)
+
+    cord_y_area_istogrammi = cord_y_area_istogrammi/2+40
+    pdf.set_xy(160,cord_y_area_istogrammi)
+    pdf.set_fill_color(36, 182, 184)
+    pdf.set_font("Arial", size=12,style='I')
+    pdf.set_text_color(255,255,255)
+    pdf.cell(60, 8, txt=f"totale verifiche con peso:{totale_verifiche} ", ln=1, align="L",fill=True)
+    cord_y_area_istogrammi+=10
+
+    pdf.set_xy(165,cord_y_area_istogrammi)
+    pdf.set_fill_color(255, 72, 78)
+    pdf.set_font("Arial", size=12,style='I')
+    pdf.set_text_color(0,0,0)
+    pdf.cell(55, 8, txt=f"totale materie insufficenti:{materie_insufficenti} ", ln=1, align="L",fill=True)
+    cord_y_area_istogrammi+=10
+
+    pdf.set_xy(180,cord_y_area_istogrammi)
+    pdf.set_fill_color(255, 72, 78)
+    pdf.set_font("Arial", size=12,style='I')
+    pdf.set_text_color(0,0,0)
+    pdf.cell(40, 8, txt=f"totale insufficenze:{totale_insufficenze} ", ln=1, align="L",fill=True)
+    cord_y_area_istogrammi+=10
+
+    pdf.set_xy(190,cord_y_area_istogrammi)
+    pdf.set_fill_color(36, 182, 184)
+    pdf.set_font("Arial", size=12,style='I')
+    pdf.set_text_color(255,255,255)
+    pdf.cell(30, 8, txt=f"totale '10':{totale_dieci} ", ln=1, align="L",fill=True)
+    cord_y_area_istogrammi+=10
+
+    pdf.set_font("Arial", size=12,style='')
+    # grafico
+    if cord_y<=150:
+        cord_y=150
+        size=50
+    else:
+        size = 35
+    x,y = grafico_generale()
+    mpl.rcParams["figure.facecolor"] = "#FFFFFF"
+    mpl.rcParams["axes.facecolor"] = "#4D4D4D"
+    fig = plt.figure(figsize=(12,4))
+    plt.plot(x,y)
+    plt.savefig(path_grafico , transparent=True)
+    plt.close()
+
+    pdf.line(cord_x, cord_y, 210, cord_y)
+    pdf.set_xy(cord_x,cord_y)
+    pdf.cell(200, 10, txt="Grafico Andamento Voti", ln=1, align="L")
+    pdf.image(path_grafico, x=5, y=cord_y+5, w=200)
+
+    cord_y+=70
+    cord_x=10
+    spazio_tra_code = int((200-size*3)/2)
+    pdf.line(cord_x, cord_y, 210, cord_y)
+    for i in path_qr_code:
+        pdf.image(i, cord_x, y=cord_y+5, w=size)
+        cord_x+=spazio_tra_code+size
+
+    # salva pdf nome
+    pdf.output(path_report)
+    return "ok"

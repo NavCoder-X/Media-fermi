@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import sys,os
-from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_generale,graficoXmateria,materie
+from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_generale,graficoXmateria,materie,report,login
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -18,6 +18,8 @@ icona_path = resource_path("assets/icona.ico")
 browser_mode = resource_path("assets/Browser_mode.txt")
 service_name_id = "Classeviva-Medie-id"
 service_name_password = "Classeviva-Medie-password"
+path_report = "archivio/report.pdf"
+
 
 
 class ModernGUI:
@@ -258,6 +260,16 @@ class ModernGUI:
                 output_text="⚠️Credenziali errate o conessione lenta"
             elif esito=="dati aggiornati":
                 output_text="Dati aggiornati!🙆‍♂️"
+        elif user_input=="/login":
+            self.update_output("login in corso... \nil programma si blocca durante l uso del browser")
+            self.root.update_idletasks()
+            esito = login()
+            if esito=="nessuna password":
+                output_text="⚠️Nessuna password trovata! Inserisci '/pass' per aggiungerla."
+            elif esito=="nessun id":
+                output_text="⚠️Nessun id trovato! Inserisci '/id' per aggiungerlo."
+            elif esito=="ok":
+                output_text="login eseguito!🙆‍♂️"
         elif user_input=="/m":
             esito = media()
             if esito=="nessun voto trovato":
@@ -318,6 +330,12 @@ class ModernGUI:
                     bg_color="transparent"
                 )
                 self.dropdown.grid(row=1, column=0, pady=(0, 20), padx=20, sticky="nsew")
+        elif user_input=="/report":
+            esito = report()
+            if esito=="ok":
+                output_text=f"report eseguito!✅\ncontrolla al path '{path_report}'"
+            elif esito=="nessun voto trovato":
+                output_text="⚠️Nessun voto trovato o il numero di materie è stato modificato manualmente \n-se il numero di materie è piu alto di quelle efettive il programma non andra avanti, \n-se è minore eseguirà il comando son il numero di materie indicate-1 , \n-se metti 0 controllerà tutte le le caselle del excel che avvolte puo causare un uso ecessivo della cpu, \n-se è un numero negativo il comando non andra avanti"
         else:
             output_text="non so cosa hai scritto...😵‍💫"
         if output_text!="non so cosa hai scritto...😵‍":
@@ -349,8 +367,7 @@ class ModernGUI:
         """Mostra la finestra di aiuto"""
         self.distruggi_grafico()
 
-        help_text = """
-🔷 GUIDA ALL'UTILIZZO:
+        help_text = """🔷 GUIDA ALL'UTILIZZO:
 
 • Usa la checkbox per vedere l attivita su chrome quando usi /upd
 
@@ -360,12 +377,14 @@ class ModernGUI:
 • '/id'   <-- per mettere il tuo id di classeviva            
 • '/pass' <-- per mettere la tua password di classeviva      
 • '/upd'  <-- per aggiornare i dati sui tuoi voti            
+• '/login'  <-- per accedere a classeviva            
 • '/m'    <-- per visualizzare la tua media generale         
 • '/excel'  <-- per aprire un file excel con i tuoi voti       
 • '/q'    <-- per sapere quanto puoi prendere in ogni materia
 • '/r'    <-- per ripulire il output box                     
 • '/gm'   <-- per vedere il grafico del andamento per materia 
 • '/gg'   <-- per vedere il grafico del andamento generale 
+• '/report'   <-- per vedere un report dei voti in pdf 
 
 """
         
