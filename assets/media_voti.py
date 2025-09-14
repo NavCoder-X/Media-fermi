@@ -21,28 +21,27 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 
+def resource_path(relative_path):
+    if hasattr(sys,"_MEIPASS"):
+        return os.path.join(sys._MEIPASS,relative_path)
+    return os.path.join(os.path.abspath("."),relative_path)
+
 excel_path = "voti.xlsx"
 numer_materie_path = "archivio/n_materie.txt"
 grafico_gen_path = "archivio/dati_grafico.json"
 service_name_id = "Classeviva-Medie-id"
 service_name_password = "Classeviva-Medie-password"
 nome_path = "archivio/nome.txt"
-path_logo_1 = "assets/logo.png"
-path_logo_2 = "assets/dashboard.png"
-path_grafico = "assets/grafico.png"
-path_ciambella = "assets/ciambella.png"
-path_qr_code = ["assets/qrcode_discord.png","assets/qrcode_github.png","assets/qrcode_instagram.png"]
+path_logo_1 = resource_path("assets/logo.png")
+path_logo_2 = resource_path("assets/dashboard.png")
+path_grafico = resource_path("assets/grafico.png")
+path_ciambella = resource_path("assets/ciambella.png")
+path_qr_code = [resource_path("assets/qrcode_discord.png"),resource_path("assets/qrcode_github.png"),resource_path("assets/qrcode_instagram.png")]
 path_report = "archivio/report.pdf"
 
 
 # chek voti
 def login():
-
-    # path
-    def resource_path(relative_path):
-        if hasattr(sys,"_MEIPASS"):
-            return os.path.join(sys._MEIPASS,relative_path)
-        return os.path.join(os.path.abspath("."),relative_path)
 
     browser_mode = resource_path("assets/Browser_mode.txt")
 
@@ -83,13 +82,8 @@ def login():
     bottone.click()
 
     return "ok"
-def chek():
-    
-    # path
-    def resource_path(relative_path):
-        if hasattr(sys,"_MEIPASS"):
-            return os.path.join(sys._MEIPASS,relative_path)
-        return os.path.join(os.path.abspath("."),relative_path)
+
+def chek(anno):
 
     browser_mode = resource_path("assets/Browser_mode.txt")
 
@@ -130,27 +124,29 @@ def chek():
 
     # naviga fino al anno precedente
     time.sleep(5)
-    try:
-        wait = WebDriverWait(driver, 10)
-        bottone = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='button']")))
-        bottone.click()
-    except:
-        pass
-    try:
-        wait = WebDriverWait(driver, 10)
-        anno_precedente = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "p.voce_menu_colonna_sx")))
-        anno_precedente.click()
-    except:
-        pass
-    # Passa alla nuova finestra/scheda
-    try:
-        windows = driver.window_handles
-        driver.switch_to.window(windows[-1])
-    except:
-        driver.quit()
-        return "credenziali errate"
+    if anno=="precedente":
+        try:
+            wait = WebDriverWait(driver, 10)
+            bottone = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='button']")))
+            bottone.click()
+        except:
+            pass
+        try:
+            wait = WebDriverWait(driver, 10)
+            anno_precedente = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "p.voce_menu_colonna_sx")))
+            anno_precedente.click()
+            time.sleep(2)
+        except:
+            pass
+        # Passa alla nuova finestra/scheda
+        try:
+            windows = driver.window_handles
+            driver.switch_to.window(windows[-1])
+        except:
+            driver.quit()
+            return "credenziali errate"
         
-    time.sleep(2) # attesa per caricamento pagina
+        time.sleep(20) # attesa per caricamento pagina
 
     # Trova tutte le righe della tabella con classe 'griglia rigtab'
     righe = driver.find_elements(By.CSS_SELECTOR, "tr[align='left']")
@@ -353,8 +349,8 @@ def media():
     flag = 0
     totale=0
     voti = get_data()
-    if voti == "nessun voto trovato":
-        return "nessun voto trovato"
+    if voti == "nessun voto trovato" or voti=="nessun file":
+        return voti
 
     for k in voti:
         for voto in k[0:len(k)-1]:
@@ -389,6 +385,8 @@ def media():
 def quanto_posso_prendere():
 
     data = get_data()
+    if data=="nessun file" or data=="nessun voto trovato":
+        return data
     l = []
 
     for i in data:
@@ -472,6 +470,9 @@ def materie():
 
     data = []
     voti = get_data()
+    if voti=="nessun file" or voti=="nessun voto trovato":
+        return voti
+
     for materia in voti:
         materia=materia[0]       
         data.append(materia)
@@ -492,7 +493,10 @@ def excel():
 def get_data():
 
     with open(numer_materie_path,"r") as f:
-        numero_materie = int(f.read())
+        try:
+            numero_materie = int(f.read())
+        except ValueError:
+            return "nessun file"
 
     lista_voti=[]
     voti=[]
@@ -537,6 +541,8 @@ def report():
     if m=="nessun voto trovato":
         return "nessun voto trovato"
     dati = get_data()
+    if dati=="nessun file" or dati=="nessun voto trovato":
+        return dati
     materie_insufficenti=0
     totale_verifiche = 0
     totale_insufficenze = 0
@@ -577,7 +583,7 @@ def report():
 
 
     pdf.set_font("Arial", size=12,style='')
-    pdf.cell(100, 20, txt=f"Studente: {nome}    id:{codice}", ln=False, align="L")
+    pdf.cell(100, 20, txt=f"Studente: {nome}    ID:{codice}", ln=False, align="L")
 
 
     # istogramma a linee orizzontali

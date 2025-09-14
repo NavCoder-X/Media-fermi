@@ -1,18 +1,12 @@
 import customtkinter as ctk
 import tkinter as tk
-import sys,os
-from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_generale,graficoXmateria,materie,report,login
+from assets.media_voti import chek,media,excel,quanto_posso_prendere,grafico_generale,graficoXmateria,materie,report,login,resource_path
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import keyring as ky
 
 # path
-def resource_path(relative_path):
-    if hasattr(sys,"_MEIPASS"):
-        return os.path.join(sys._MEIPASS,relative_path)
-    return os.path.join(os.path.abspath("."),relative_path)
-
 nome_path = "archivio/nome.txt"
 icona_path = resource_path("assets/icona.ico")
 browser_mode = resource_path("assets/Browser_mode.txt")
@@ -49,14 +43,17 @@ class ModernGUI:
         self.root.grid_rowconfigure(2, weight=0)  # Checkbox
         self.root.grid_rowconfigure(3, weight=0)  # Entry e bottoni
         
-        # Variabili per le animazioni
-        self.animation_running = False
         # varibile contente i comandi usati dal inizio del programma
         self.comandi_usati = []
         self.indice_comandi = -1
 
+        self.root.protocol("WM-DELETE-WINDOW",self.on_closing)
         self.setup_gui()
-        
+    def on_closing(self):
+        self.root.destroy() # chiudi gui
+        self.root.quit()    # ferma loop
+        exit(0)             # ferma script
+
     def setup_gui(self):
         # Label di saluto in alto
         with open(nome_path, "r") as file:
@@ -248,18 +245,23 @@ class ModernGUI:
             content = user_input[6::]
             ky.set_password(service_name_password,"user",content)
             output_text = "password aggiornata!"
-        elif user_input=="/upd":
-            self.update_output("📡Aggiornamento in corso...\n🕓ci potrebbero volere alcuni minuti\n🛜assicurati di avere una buona conessione.")
-            self.root.update_idletasks()
-            esito = chek()
-            if esito=="nessuna password":
-                output_text="⚠️Nessuna password trovata! Inserisci '/pass' per aggiungerla."
-            elif esito=="nessun id":
-                output_text="⚠️Nessun id trovato! Inserisci '/id' per aggiungerlo."
-            elif esito=="credenziali errate":
-                output_text="⚠️Credenziali errate o conessione lenta"
-            elif esito=="dati aggiornati":
-                output_text="Dati aggiornati!🙆‍♂️"
+        elif user_input.startswith("/upd"):
+            anno = user_input.split(" ")[1] if len(user_input.split(" ")) > 1 else "questo"
+            print(anno)
+            if anno!="precedente" and anno!="questo":
+                output_text="comando non valido"
+            else:
+                self.update_output("📡Aggiornamento in corso...\n🕓ci potrebbero volere alcuni minuti\n🛜assicurati di avere una buona conessione.")
+                self.root.update_idletasks()
+                esito = chek(anno)
+                if esito=="nessuna password":
+                    output_text="⚠️Nessuna password trovata! Inserisci '/pass' per aggiungerla."
+                elif esito=="nessun id":
+                    output_text="⚠️Nessun id trovato! Inserisci '/id' per aggiungerlo."
+                elif esito=="credenziali errate":
+                    output_text="⚠️Credenziali errate o conessione lenta"
+                elif esito=="dati aggiornati":
+                    output_text="Dati aggiornati!🙆‍♂️"
         elif user_input=="/login":
             self.update_output("login in corso... \nil programma si blocca durante l uso del browser")
             self.root.update_idletasks()
@@ -274,18 +276,25 @@ class ModernGUI:
             esito = media()
             if esito=="nessun voto trovato":
                 output_text="⚠️Nessun voto trovato!"
+            elif esito=="nessun file":
+                output_text="⚠️esegui prima /upd per ottenere i dati"
             else:
                 output_text=f"📈Media Generale: {esito:.2f}"
         elif user_input=="/excel":
             self.update_output("📂 Il file si sta aprendo...")
             self.root.update_idletasks()
-            excel()
-            output_text = "File CSV aperto con successo!👌"   
+            try:
+                excel()
+                output_text = "File CSV aperto con successo!👌"   
+            except FileNotFoundError:
+                output_text="⚠️file non trovato"
         elif user_input=="/r":
             output_text="L'output del programma apparirà qui..."
         elif user_input=="/q":
             l = quanto_posso_prendere()
             output_text = "\n".join(l) if l else "⚠️ Nessun risultato trovato."
+            if l=="nessun file" or l=="nessun voto trovato":
+                output_text="⚠️dati non trovati o file excel inesistente"
         elif user_input=="/gg":
             try:
                 self.canvas.get_tk_widget().destroy()
@@ -320,8 +329,8 @@ class ModernGUI:
                 self.canvas.get_tk_widget().grid(row=0, column=0, pady=20, padx=20, sticky="nsew")
             output_text="Grafico x Materia:"
             valori = materie()
-            if valori=="nessun dato":
-                output_text="⚠️ Nessun dato trovato"
+            if valori=="nessun dato" or valori=="nessun file" or valori=="nessun voto trovato":
+                output_text="⚠️ Nessun dato trovato o file excel inesistente"
             else:
                 self.dropdown = ctk.CTkOptionMenu(
                     master=self.output_frame,
@@ -334,6 +343,8 @@ class ModernGUI:
             esito = report()
             if esito=="ok":
                 output_text=f"report eseguito!✅\ncontrolla al path '{path_report}'"
+            elif esito=="nessun file":
+                output_text="⚠️file excel inesistente"
             elif esito=="nessun voto trovato":
                 output_text="⚠️Nessun voto trovato o il numero di materie è stato modificato manualmente \n-se il numero di materie è piu alto di quelle efettive il programma non andra avanti, \n-se è minore eseguirà il comando son il numero di materie indicate-1 , \n-se metti 0 controllerà tutte le le caselle del excel che avvolte puo causare un uso ecessivo della cpu, \n-se è un numero negativo il comando non andra avanti"
         else:
@@ -376,7 +387,7 @@ class ModernGUI:
 • '/nome' <-- per mettere il tuo nome                        
 • '/id'   <-- per mettere il tuo id di classeviva            
 • '/pass' <-- per mettere la tua password di classeviva      
-• '/upd'  <-- per aggiornare i dati sui tuoi voti            
+• '/upd'  <-- aggiorna dati| aggiungi 'precedente' per voti dell anno precedente            
 • '/login'  <-- per accedere a classeviva            
 • '/m'    <-- per visualizzare la tua media generale         
 • '/excel'  <-- per aprire un file excel con i tuoi voti       
@@ -390,9 +401,10 @@ class ModernGUI:
         
         # Mostra l'aiuto nel label centrale
         self.update_output(help_text)
-
+    
     def run(self):
         """Avvia l'applicazione"""
+
         self.root.mainloop()
 
 # Crea e avvia l'applicazione

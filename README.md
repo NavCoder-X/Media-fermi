@@ -62,11 +62,6 @@ Installa le librerie
 - 📂 voti organizzati in un excel
 - 🌓 Light/dark mode toggle
 
-## ⏭️UPcoming Features
-
-- 🥇 classifica materie
-- 🗃️ report pdf
-- 📊 dashboard
 
 ## 🔗 Links & Contatti
 
